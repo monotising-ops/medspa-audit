@@ -78,18 +78,31 @@ create table grade_tiers (
   color       text not null default '#ef4444'
 );
 
+-- ─── Info Bank ────────────────────────────────────────────────
+create table if not exists info_bank (
+  id          uuid primary key default gen_random_uuid(),
+  question_id text not null,
+  option_id   text not null,
+  title       text not null default '',
+  body        text not null default '',
+  category    text not null default 'insight',
+  created_at  timestamptz default now()
+);
+
 -- ─── RLS policies ─────────────────────────────────────────────
 alter table questions enable row level security;
 alter table leads enable row level security;
 alter table result_contents enable row level security;
 alter table site_configs enable row level security;
 alter table grade_tiers enable row level security;
+alter table info_bank enable row level security;
 
 -- Public can read questions and configs (assessment display)
 create policy "public read questions" on questions for select using (true);
 create policy "public read configs" on site_configs for select using (true);
 create policy "public read grade_tiers" on grade_tiers for select using (true);
 create policy "public read result_contents" on result_contents for select using (true);
+create policy "public read info_bank" on info_bank for select using (true);
 
 -- Anyone can insert leads (public submission)
 create policy "public insert leads" on leads for insert with check (true);
@@ -101,3 +114,4 @@ create index leads_created_at_idx on leads(created_at desc);
 create index leads_grade_idx on leads(grade);
 create index leads_revenue_tier_idx on leads(revenue_tier);
 create index questions_order_idx on questions("order");
+create index info_bank_option_idx on info_bank(question_id, option_id);

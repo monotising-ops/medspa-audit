@@ -5,8 +5,8 @@
   --color-surface: #111111;
   --color-border-subtle: #1e1e1e;
 
-  --color-accent: var(--accent-color, #3b82f6);
-  --color-accent-blue: #3b82f6;
+  --color-accent: var(--accent-color, #D4A847);
+  --color-accent-gold: #D4A847;
 
   --color-score-red: #ef4444;
   --color-score-orange: #f97316;
@@ -41,7 +41,9 @@
 }
 
 :root {
-  --accent-color: #3b82f6;
+  --accent-color: #D4A847;
+  --accent-color-light: #E8C96A;
+  --accent-color-dark: #B8922E;
 }
 
 * { box-sizing: border-box; }
@@ -65,8 +67,8 @@ code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
 
 .gradient-mesh {
   background:
-    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(59,130,246,0.15), transparent),
-    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(139,92,246,0.08), transparent),
+    radial-gradient(ellipse 80% 60% at 50% -20%, rgba(212,168,71,0.12), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(184,146,46,0.06), transparent),
     #050505;
 }
 
@@ -78,11 +80,11 @@ code, pre, .font-mono { font-family: 'JetBrains Mono', monospace; }
 }
 
 .answer-card { transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
-.answer-card:hover { border-color: var(--accent-color, #3b82f6); background-color: rgba(59,130,246,0.08); }
+.answer-card:hover { border-color: var(--accent-color, #D4A847); background-color: rgba(212,168,71,0.08); }
 .answer-card.selected {
-  border-color: var(--accent-color, #3b82f6);
-  background-color: rgba(59,130,246,0.15);
-  box-shadow: 0 0 0 1px var(--accent-color, #3b82f6);
+  border-color: var(--accent-color, #D4A847);
+  background-color: rgba(212,168,71,0.15);
+  box-shadow: 0 0 0 1px var(--accent-color, #D4A847);
 }
 
 .results-blurred { filter: blur(14px); pointer-events: none; user-select: none; }

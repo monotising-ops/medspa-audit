@@ -116,6 +116,7 @@ export interface CoverConfig {
   trust_line: string;
   background_image_url: string;
   background_color: string;
+  logo_url?: string;
 }
 
 export interface GateConfig {
@@ -268,3 +269,15 @@ export const GRADE_COLORS: Record<Grade, string> = {
   functional: '#eab308',
   strong: '#22c55e',
 };
+
+// ─── Info Bank ────────────────────────────────────────────────────────────────
+
+export interface InfoBankEntry {
+  id: string;
+  question_id: string;
+  option_id: string;
+  title: string;
+  body: string;
+  category: 'insight' | 'warning' | 'opportunity' | 'strength';
+  created_at: string;
+}

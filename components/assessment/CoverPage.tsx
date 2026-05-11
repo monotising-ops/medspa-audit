@@ -21,7 +21,7 @@ function HeadlineWithGradient({ text }: { text: string }) {
       {plain && <span>{plain} </span>}
       <span
         style={{
-          background: 'linear-gradient(135deg, #3b82f6 0%, #a855f7 100%)',
+          background: 'linear-gradient(135deg, #D4A847 0%, #E8C96A 50%, #B8922E 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           backgroundClip: 'text',
@@ -37,7 +37,7 @@ const BLOB_CONFIG = [
   {
     width: 480,
     height: 480,
-    color: 'rgba(59,130,246,0.12)',
+    color: 'rgba(212,168,71,0.10)',
     top: '-15%',
     left: '30%',
     duration: 18,
@@ -47,7 +47,7 @@ const BLOB_CONFIG = [
   {
     width: 360,
     height: 360,
-    color: 'rgba(139,92,246,0.09)',
+    color: 'rgba(184,146,46,0.07)',
     top: '55%',
     left: '-10%',
     duration: 22,
@@ -57,7 +57,7 @@ const BLOB_CONFIG = [
   {
     width: 300,
     height: 300,
-    color: 'rgba(59,130,246,0.08)',
+    color: 'rgba(212,168,71,0.08)',
     top: '60%',
     left: '70%',
     duration: 26,
@@ -67,7 +67,7 @@ const BLOB_CONFIG = [
   {
     width: 200,
     height: 200,
-    color: 'rgba(168,85,247,0.07)',
+    color: 'rgba(184,146,46,0.07)',
     top: '20%',
     left: '80%',
     duration: 14,
@@ -147,6 +147,37 @@ export default function CoverPage({ config, onStart }: CoverPageProps) {
           animate="show"
           className="flex flex-col items-center gap-6 max-w-2xl w-full"
         >
+          {/* Logo / Company name */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col items-center gap-2"
+            style={{ marginBottom: '8px' }}
+          >
+            {config.logo_url ? (
+              <img
+                src={config.logo_url}
+                alt="Company logo"
+                style={{
+                  maxHeight: '48px',
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+              />
+            ) : null}
+            <span
+              style={{
+                fontSize: '14px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: '#D4A847',
+                fontWeight: 500,
+                fontFamily: 'var(--font-body, "Outfit", sans-serif)',
+              }}
+            >
+              Monotising
+            </span>
+          </motion.div>
+
           {/* Headline */}
           <motion.h1
             variants={itemVariants}
@@ -175,22 +206,25 @@ export default function CoverPage({ config, onStart }: CoverPageProps) {
           <motion.div variants={itemVariants} className="flex flex-col items-center gap-4">
             <button
               onClick={onStart}
-              className="group relative overflow-hidden rounded-xl font-semibold text-lg text-white transition-all duration-200"
+              className="group relative overflow-hidden rounded-xl font-semibold text-lg transition-all duration-200"
               style={{
-                background: 'var(--accent-color, #3b82f6)',
+                background: '#D4A847',
+                color: '#000000',
                 border: 'none',
                 cursor: 'pointer',
                 minWidth: '280px',
                 padding: '14px 32px',
                 fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
-                boxShadow: '0 0 0 0 rgba(59,130,246,0.4)',
+                boxShadow: '0 0 0 0 rgba(212,168,71,0.4)',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.boxShadow = '0 0 0 8px rgba(59,130,246,0.15), 0 0 32px rgba(59,130,246,0.25)';
+                e.currentTarget.style.background = '#E8C96A';
+                e.currentTarget.style.boxShadow = '0 0 0 8px rgba(212,168,71,0.15), 0 0 32px rgba(212,168,71,0.25)';
                 e.currentTarget.style.transform = 'translateY(-1px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.boxShadow = '0 0 0 0 rgba(59,130,246,0.4)';
+                e.currentTarget.style.background = '#D4A847';
+                e.currentTarget.style.boxShadow = '0 0 0 0 rgba(212,168,71,0.4)';
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >

@@ -19,10 +19,26 @@ function QuoteIcon() {
     >
       <path
         d="M0 24V14.4C0 6.4 4.8 1.6 14.4 0L16 3.2C11.2 4.8 8.8 7.2 8 11.2H14.4V24H0ZM17.6 24V14.4C17.6 6.4 22.4 1.6 32 0L33.6 3.2C28.8 4.8 26.4 7.2 25.6 11.2H32V24H17.6Z"
-        fill="#3b82f6"
+        fill="#D4A847"
       />
     </svg>
   );
+}
+
+function getYouTubeEmbedUrl(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (!match) return null;
+  return `https://www.youtube.com/embed/${match[1]}?rel=0&modestbranding=1`;
+}
+
+function getLoomEmbedUrl(url: string): string | null {
+  const match = url.match(/loom\.com\/share\/([a-zA-Z0-9]+)/);
+  if (!match) return null;
+  return `https://www.loom.com/embed/${match[1]}`;
+}
+
+function getEmbedUrl(url: string): string {
+  return getYouTubeEmbedUrl(url) ?? getLoomEmbedUrl(url) ?? url;
 }
 
 export default function ResultsCTA({ config }: ResultsCTAProps) {
@@ -50,7 +66,7 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
       <div
         className="absolute top-0 left-0 right-0 h-[3px]"
         style={{
-          background: 'linear-gradient(90deg, #3b82f6, rgba(59,130,246,0.4) 60%, transparent)',
+          background: 'linear-gradient(90deg, #D4A847, rgba(212,168,71,0.4) 60%, transparent)',
         }}
       />
 
@@ -74,10 +90,10 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
               href={primary_cta_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full md:w-auto inline-flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-white transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
+              className="w-full md:w-auto inline-flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-black transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
               style={{
-                backgroundColor: '#3b82f6',
-                boxShadow: '0 0 24px rgba(59,130,246,0.35), 0 4px 12px rgba(0,0,0,0.4)',
+                backgroundColor: '#D4A847',
+                boxShadow: '0 0 24px rgba(212,168,71,0.35), 0 4px 12px rgba(0,0,0,0.4)',
               }}
             >
               {primary_cta_text}
@@ -86,15 +102,15 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
                 width="16" height="16" viewBox="0 0 16 16" fill="none"
                 aria-hidden="true"
               >
-                <path d="M3 8H13M9 4L13 8L9 12" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 8H13M9 4L13 8L9 12" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </a>
           ) : (
             <button
-              className="w-full md:w-auto inline-flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-white transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
+              className="w-full md:w-auto inline-flex items-center justify-center rounded-xl px-8 py-4 text-base font-semibold text-black transition-all duration-150 hover:opacity-90 active:scale-[0.98]"
               style={{
-                backgroundColor: '#3b82f6',
-                boxShadow: '0 0 24px rgba(59,130,246,0.35), 0 4px 12px rgba(0,0,0,0.4)',
+                backgroundColor: '#D4A847',
+                boxShadow: '0 0 24px rgba(212,168,71,0.35), 0 4px 12px rgba(0,0,0,0.4)',
               }}
             >
               {primary_cta_text}
@@ -103,7 +119,7 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
                 width="16" height="16" viewBox="0 0 16 16" fill="none"
                 aria-hidden="true"
               >
-                <path d="M3 8H13M9 4L13 8L9 12" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M3 8H13M9 4L13 8L9 12" stroke="#000" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           )
@@ -116,17 +132,20 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
           </p>
         )}
 
-        {/* Embedded video */}
+        {/* Embedded video — prominent, full-width 16:9 */}
         {show_video && video_url && (
           <div className="w-full mt-2">
+            <p className="text-xs font-semibold uppercase tracking-wider mb-2 text-left" style={{ color: '#D4A847' }}>
+              Watch: Full Revenue Breakdown
+            </p>
             <div
-              className="relative w-full overflow-hidden rounded-xl border border-[#1e1e1e] bg-[#0a0a0a]"
+              className="relative w-full overflow-hidden rounded-2xl border border-[#1e1e1e] bg-[#0a0a0a]"
               style={{ paddingBottom: '56.25%' /* 16:9 */ }}
             >
               <iframe
-                src={video_url}
+                src={getEmbedUrl(video_url)}
                 title="Video"
-                className="absolute inset-0 w-full h-full rounded-xl"
+                className="absolute inset-0 w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -138,7 +157,7 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
         {show_case_study && case_study_text && (
           <div
             className="w-full text-left rounded-xl border border-[#1e1e1e] bg-[#0d0d0d] px-6 py-5 mt-2"
-            style={{ borderLeftColor: '#3b82f6', borderLeftWidth: '3px' }}
+            style={{ borderLeftColor: '#D4A847', borderLeftWidth: '3px' }}
           >
             <QuoteIcon />
             <p

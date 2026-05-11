@@ -123,7 +123,7 @@ insert into questions ("order", type, input_type, domain, question_text, options
 -- ─── Site Config — Cover ──────────────────────────────────────
 insert into site_configs (section, key, value) values
 ('cover', 'headline',          'Find Out Exactly Where Your Med Spa Is Leaking Revenue'),
-('cover', 'subtext',           'Answer 11 quick questions. Get a personalized growth score, see where your bookings are breaking down, and get a strategy built for your spa — free.'),
+('cover', 'subtext',           'Answer 15 quick questions. Get a personalized growth score, see where your bookings are breaking down, and get a strategy built for your spa — free.'),
 ('cover', 'cta_text',          'Get My Free Growth Audit →'),
 ('cover', 'trust_line',        'Takes 3 minutes · Used by 200+ med spas · Free forever'),
 ('cover', 'background_image_url', ''),

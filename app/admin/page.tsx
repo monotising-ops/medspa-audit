@@ -7,6 +7,7 @@ import QuestionManager from '@/components/admin/QuestionManager';
 import ResultsContentManager from '@/components/admin/ResultsContentManager';
 import LeadsTable from '@/components/admin/LeadsTable';
 import SettingsPanel from '@/components/admin/SettingsPanel';
+import InfoBank from '@/components/admin/InfoBank';
 import type {
   Question,
   Lead,
@@ -16,9 +17,10 @@ import type {
   GateConfig,
   ResultsCTAConfig,
   AppSettings,
+  InfoBankEntry,
 } from '@/types';
 
-type Tab = 'sequence' | 'questions' | 'content' | 'leads' | 'settings';
+type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings';
 
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('');
@@ -76,6 +78,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'sequence', label: 'Sequence Editor' },
   { id: 'questions', label: 'Questions' },
   { id: 'content', label: 'Results Content' },
+  { id: 'infobank', label: 'Info Bank' },
   { id: 'leads', label: 'Leads' },
   { id: 'settings', label: 'Settings' },
 ];
@@ -100,6 +103,7 @@ export default function AdminPage() {
   const [appSettings, setAppSettings] = useState<AppSettings>({
     assessment_active: true, webhook_url: '', accent_color: '#3b82f6', logo_url: '', admin_password_hash: '', chart_type: 'bar',
   });
+  const [infoBankEntries, setInfoBankEntries] = useState<InfoBankEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   const authHeaders = useCallback(() => ({
@@ -111,15 +115,17 @@ export default function AdminPage() {
     if (!token) return;
     setLoading(true);
     try {
-      const [qRes, lRes, cRes, configRes] = await Promise.all([
+      const [qRes, lRes, cRes, configRes, ibRes] = await Promise.all([
         fetch('/api/admin/questions', { headers: authHeaders() }),
         fetch('/api/admin/leads', { headers: authHeaders() }),
         fetch('/api/admin/content', { headers: authHeaders() }),
         fetch('/api/config'),
+        fetch('/api/admin/info-bank', { headers: authHeaders() }),
       ]);
       if (qRes.ok) setQuestions(await qRes.json());
       if (lRes.ok) setLeads(await lRes.json());
       if (cRes.ok) setContents(await cRes.json());
+      if (ibRes.ok) setInfoBankEntries(await ibRes.json());
       if (configRes.ok) {
         const { configs, gradeTiers: gt } = await configRes.json();
         setGradeTiers(gt ?? []);
@@ -283,6 +289,29 @@ export default function AdminPage() {
               setGradeTiers((ts) => ts.map((t) => (t.id === id ? { ...t, ...data } : t)));
             }}
             onUploadImage={async (file, domain) => uploadImage(file, `content/${domain}`)}
+          />
+        )}
+        {tab === 'infobank' && (
+          <InfoBank
+            questions={questions}
+            entries={infoBankEntries}
+            onCreate={async (entry) => {
+              const res = await fetch('/api/admin/info-bank', { method: 'POST', headers: authHeaders(), body: JSON.stringify(entry) });
+              if (!res.ok) throw new Error('Failed');
+              const created = await res.json();
+              setInfoBankEntries(prev => [...prev, created]);
+              return created;
+            }}
+            onUpdate={async (id, data) => {
+              const res = await fetch(`/api/admin/info-bank/${id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(data) });
+              if (!res.ok) throw new Error('Failed');
+              const updated = await res.json();
+              setInfoBankEntries(prev => prev.map(e => e.id === id ? updated : e));
+            }}
+            onDelete={async (id) => {
+              await fetch(`/api/admin/info-bank/${id}`, { method: 'DELETE', headers: authHeaders() });
+              setInfoBankEntries(prev => prev.filter(e => e.id !== id));
+            }}
           />
         )}
         {tab === 'leads' && (
