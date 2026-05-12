@@ -168,11 +168,11 @@ function Ticker({ text }: { text: string }) {
 
 function TrustBullets({ bullets }: { bullets: string[] }) {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '0 4px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
       {bullets.filter(Boolean).map((b, i) => (
-        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-          <span style={{ color: '#D4A847', fontSize: '13px', flexShrink: 0, marginTop: '1px' }}>✓</span>
-          <span style={{ color: '#737373', fontSize: '13px', lineHeight: 1.4 }}>{b}</span>
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ color: '#D4A847', fontSize: '13px', flexShrink: 0 }}>✓</span>
+          <span style={{ color: '#737373', fontSize: '13px', lineHeight: 1.4, textAlign: 'center' }}>{b}</span>
         </div>
       ))}
     </div>
@@ -240,7 +240,7 @@ function MiniQuestionnaire({ questions, ctaText, onSubmit }: MiniQuestionnairePr
               {q.input_type === 'text' && (
                 <input
                   type="text"
-                  placeholder="e.g. Glow Studio"
+                  placeholder={q.placeholder ?? 'Type your answer…'}
                   value={(val as string | undefined) ?? ''}
                   onChange={(e) =>
                     setSelections((prev) => new Map(prev).set(q.id, e.target.value))
@@ -452,15 +452,15 @@ export default function CoverPage({ config, intakeQuestions, onStart }: CoverPag
       )}
 
       {/* ── Main content ───────────────────────────────────────────────────── */}
-      <div style={{ flex: 1, maxWidth: '480px', margin: '0 auto', width: '100%', padding: '40px 20px 32px' }}>
+      <div style={{ flex: 1, width: '100%' }}>
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="show"
-          style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '28px', paddingBottom: '32px' }}
         >
-          {/* Logo / brand */}
-          <motion.div variants={itemVariants} style={{ textAlign: 'center' }}>
+          {/* Logo / brand — narrow centered */}
+          <motion.div variants={itemVariants} style={{ textAlign: 'center', paddingTop: '36px' }}>
             {config.logo_url && (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -481,14 +481,23 @@ export default function CoverPage({ config, intakeQuestions, onStart }: CoverPag
             </span>
           </motion.div>
 
-          {/* Headline */}
-          <motion.div variants={itemVariants} style={{ textAlign: 'center' }}>
+          {/* Headline — wide container to fill horizontal space */}
+          <motion.div
+            variants={itemVariants}
+            style={{
+              textAlign: 'center',
+              maxWidth: '720px',
+              margin: '0 auto',
+              width: '100%',
+              padding: '0 24px',
+            }}
+          >
             <h1
               style={{
-                fontSize: 'clamp(28px, 7vw, 42px)',
+                fontSize: 'clamp(32px, 5.5vw, 58px)',
                 fontWeight: 800,
-                lineHeight: 1.15,
-                letterSpacing: '-0.02em',
+                lineHeight: 1.1,
+                letterSpacing: '-0.03em',
                 color: '#f5f5f5',
                 margin: 0,
                 fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
@@ -498,24 +507,40 @@ export default function CoverPage({ config, intakeQuestions, onStart }: CoverPag
             </h1>
             {config.subtext && (
               <p style={{
-                marginTop: '14px',
+                marginTop: '16px',
                 color: '#737373',
-                fontSize: '15px',
+                fontSize: '16px',
                 lineHeight: 1.6,
                 fontFamily: 'var(--font-body, "Outfit", sans-serif)',
+                maxWidth: '520px',
+                margin: '16px auto 0',
               }}>
                 {config.subtext}
               </p>
             )}
           </motion.div>
 
-          {/* Product cards */}
-          <motion.div variants={itemVariants}>
-            <ReportCards />
+          {/* Hero image or CSS card mockups */}
+          <motion.div variants={itemVariants} style={{ display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
+            {config.hero_image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={config.hero_image_url}
+                alt="Report preview"
+                style={{
+                  maxWidth: '420px',
+                  width: '100%',
+                  objectFit: 'contain',
+                  display: 'block',
+                }}
+              />
+            ) : (
+              <ReportCards />
+            )}
           </motion.div>
 
-          {/* Mini questionnaire or plain CTA */}
-          <motion.div variants={itemVariants}>
+          {/* Mini questionnaire or plain CTA — narrow */}
+          <motion.div variants={itemVariants} style={{ maxWidth: '480px', width: '100%', margin: '0 auto', padding: '0 20px' }}>
             {intakeQuestions.length > 0 ? (
               <MiniQuestionnaire
                 questions={intakeQuestions}
@@ -548,9 +573,9 @@ export default function CoverPage({ config, intakeQuestions, onStart }: CoverPag
             )}
           </motion.div>
 
-          {/* Trust bullets */}
+          {/* Trust bullets — narrow, centered */}
           {bullets.length > 0 && (
-            <motion.div variants={itemVariants}>
+            <motion.div variants={itemVariants} style={{ maxWidth: '480px', width: '100%', margin: '0 auto', padding: '0 20px' }}>
               <TrustBullets bullets={bullets} />
             </motion.div>
           )}

@@ -127,6 +127,7 @@ function parseConfigs(grouped: Record<string, Record<string, string>>) {
     cover_questions_count: cover.cover_questions_count
       ? parseInt(cover.cover_questions_count, 10)
       : (def.cover_questions_count ?? 2),
+    hero_image_url: cover.hero_image_url ?? '',
   };
 
   const gateConfig: GateConfig = {

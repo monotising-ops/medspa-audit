@@ -182,7 +182,9 @@ function CoverSection({
   const [local, setLocal] = useState<CoverConfig>({ ...config });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingHero, setUploadingHero] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const heroFileRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof CoverConfig>(key: K, val: CoverConfig[K]) {
     setLocal((prev) => ({ ...prev, [key]: val }));
@@ -200,6 +202,21 @@ function CoverSection({
       toast.error('Image upload failed');
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleHeroImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingHero(true);
+    try {
+      const url = await onUploadImage(file, 'cover-hero');
+      set('hero_image_url', url);
+      toast.success('Hero image uploaded');
+    } catch {
+      toast.error('Hero image upload failed');
+    } finally {
+      setUploadingHero(false);
     }
   }
 
@@ -286,6 +303,45 @@ function CoverSection({
           style={{ maxWidth: '80px' }}
         />
         <p className="text-xs text-[#52525b] mt-1">Number of intake questions to embed in the cover page</p>
+      </div>
+
+      <div>
+        <Label>Hero Image (replaces card mockups — use a PNG with transparent background)</Label>
+        {local.hero_image_url && (
+          <div className="mb-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={local.hero_image_url}
+              alt="Hero preview"
+              className="h-28 rounded-md object-contain border border-[#2a2a2a]"
+              style={{ background: 'repeating-conic-gradient(#1a1a1a 0% 25%, #111 0% 50%) 0 0 / 16px 16px' }}
+            />
+          </div>
+        )}
+        <input
+          ref={heroFileRef}
+          type="file"
+          accept="image/*"
+          onChange={handleHeroImageChange}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => heroFileRef.current?.click()}
+          disabled={uploadingHero}
+          className="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-2 text-sm text-[#a1a1aa] hover:border-[#3b82f6] hover:text-white disabled:opacity-50 transition-colors"
+        >
+          {uploadingHero ? 'Uploading…' : local.hero_image_url ? 'Replace Hero Image' : 'Upload Hero Image'}
+        </button>
+        {local.hero_image_url && (
+          <button
+            type="button"
+            onClick={() => set('hero_image_url', '')}
+            className="ml-2 text-sm text-[#71717a] hover:text-red-400 transition-colors"
+          >
+            Remove
+          </button>
+        )}
       </div>
 
       <div>

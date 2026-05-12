@@ -46,6 +46,7 @@ export interface Question {
   input_type: InputType;
   domain: Domain;
   question_text: string;
+  placeholder: string | null;
   image_url: string | null;
   options: AnswerOption[];
   active: boolean;
@@ -120,9 +121,10 @@ export interface CoverConfig {
   // Landing page fields
   banner_text?: string;
   show_banner?: boolean;
-  trust_bullets?: string;   // newline-separated bullet points
-  ticker_text?: string;     // scrolling marquee text
-  cover_questions_count?: number; // how many intake questions to embed (default 2)
+  trust_bullets?: string;
+  ticker_text?: string;
+  cover_questions_count?: number;
+  hero_image_url?: string; // replaces CSS card mockups when set
 }
 
 export interface GateConfig {

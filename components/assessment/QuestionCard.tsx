@@ -169,7 +169,7 @@ export default function QuestionCard({
               type="text"
               value={textValue}
               onChange={(e) => setTextValue(e.target.value)}
-              placeholder="Type your answer…"
+              placeholder={question.placeholder ?? 'Type your answer…'}
               className="w-full px-4 py-3 rounded-xl text-base outline-none"
               style={{
                 background: '#111111',

@@ -21,6 +21,7 @@ create table questions (
   input_type  text not null check (input_type in ('single_select','multi_select','text')),
   domain      text not null,
   question_text text not null,
+  placeholder text,
   image_url   text,
   options     jsonb not null default '[]',
   active      boolean not null default true,

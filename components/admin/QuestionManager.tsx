@@ -517,6 +517,20 @@ function EditPanel({
             </div>
           </div>
 
+          {/* Placeholder (text questions only) */}
+          {draft.input_type === 'text' && (
+            <div>
+              <Label>Placeholder Text</Label>
+              <input
+                type="text"
+                value={draft.placeholder ?? ''}
+                onChange={(e) => set('placeholder', e.target.value || null)}
+                placeholder="e.g. Glow Studio"
+                className={inputClass}
+              />
+            </div>
+          )}
+
           {/* Image upload */}
           <div>
             <Label>Question Image (optional)</Label>
@@ -745,6 +759,7 @@ export default function QuestionManager({
         const updated: Question = {
           id: editingId,
           question_text: draft.question_text!,
+          placeholder: draft.placeholder ?? null,
           type: draft.type ?? 'scored',
           input_type: draft.input_type ?? 'single_select',
           domain: draft.domain ?? 'lead_gen',
