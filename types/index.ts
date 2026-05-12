@@ -117,6 +117,12 @@ export interface CoverConfig {
   background_image_url: string;
   background_color: string;
   logo_url?: string;
+  // Landing page fields
+  banner_text?: string;
+  show_banner?: boolean;
+  trust_bullets?: string;   // newline-separated bullet points
+  ticker_text?: string;     // scrolling marquee text
+  cover_questions_count?: number; // how many intake questions to embed (default 2)
 }
 
 export interface GateConfig {

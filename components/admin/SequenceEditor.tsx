@@ -238,11 +238,55 @@ function CoverSection({
         placeholder="Start My Free Audit"
       />
       <TextField
-        label="Trust Line"
+        label="Trust Line (shown if no bullets)"
         value={local.trust_line}
         onChange={(v) => set('trust_line', v)}
         placeholder="Takes 3 minutes · 100% free"
       />
+
+      <div className="space-y-3 pt-1">
+        <Toggle
+          checked={local.show_banner !== false}
+          onChange={(v) => set('show_banner', v)}
+          label="Show social proof banner at top"
+        />
+      </div>
+
+      <TextField
+        label="Banner Text"
+        value={local.banner_text ?? ''}
+        onChange={(v) => set('banner_text', v)}
+        placeholder="200+ Med Spas Audited · Takes 3 Minutes · Free"
+      />
+
+      <TextAreaField
+        label="Trust Bullets (one per line)"
+        value={local.trust_bullets ?? ''}
+        onChange={(v) => set('trust_bullets', v)}
+        rows={4}
+        placeholder={"Personalized to your revenue tier\nIdentifies your biggest bottleneck\nActionable, not generic"}
+      />
+
+      <TextField
+        label="Scrolling Ticker Text"
+        value={local.ticker_text ?? ''}
+        onChange={(v) => set('ticker_text', v)}
+        placeholder="Lead Generation · Speed-to-Lead · Booking · "
+      />
+
+      <div>
+        <Label>Questions on Cover Page (0 = none, max 4)</Label>
+        <input
+          type="number"
+          min={0}
+          max={4}
+          value={local.cover_questions_count ?? 2}
+          onChange={(e) => set('cover_questions_count', parseInt(e.target.value, 10))}
+          className={inputClass}
+          style={{ maxWidth: '80px' }}
+        />
+        <p className="text-xs text-[#52525b] mt-1">Number of intake questions to embed in the cover page</p>
+      </div>
 
       <div>
         <Label>Background Color</Label>

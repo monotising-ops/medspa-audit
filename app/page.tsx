@@ -66,12 +66,17 @@ function labelToLocationCount(label: string): LocationCount | null {
 
 function defaultCoverConfig(): CoverConfig {
   return {
-    headline: 'Is Your Med Spa Leaving Revenue on the Table?',
-    subtext: 'Take our 5-minute assessment and get your personalized revenue recovery report.',
-    cta_text: 'Start the Assessment →',
-    trust_line: 'Free · No credit card · 5 minutes',
+    headline: 'Not Getting Enough Bookings Through Your Ads?',
+    subtext: 'Find out exactly where your med spa is leaving money on the table — and what to fix first.',
+    cta_text: 'Get My Free Audit →',
+    trust_line: 'Free · No credit card · 3 minutes',
     background_image_url: '',
     background_color: '#050505',
+    banner_text: '200+ Med Spas Audited · Takes 3 Minutes · Free',
+    show_banner: true,
+    trust_bullets: 'Personalized to your specific revenue tier\nIdentifies your biggest growth bottleneck\nActionable recommendations, not generic advice',
+    ticker_text: 'Lead Generation · Speed-to-Lead · Booking · Revenue Attribution · Growth Systems · ',
+    cover_questions_count: 2,
   };
 }
 
@@ -107,13 +112,21 @@ function parseConfigs(grouped: Record<string, Record<string, string>>) {
   const cta = grouped['results_cta'] ?? {};
   const settings = grouped['settings'] ?? {};
 
+  const def = defaultCoverConfig();
   const coverConfig: CoverConfig = {
-    headline: cover.headline ?? defaultCoverConfig().headline,
-    subtext: cover.subtext ?? defaultCoverConfig().subtext,
-    cta_text: cover.cta_text ?? defaultCoverConfig().cta_text,
-    trust_line: cover.trust_line ?? defaultCoverConfig().trust_line,
+    headline: cover.headline ?? def.headline,
+    subtext: cover.subtext ?? def.subtext,
+    cta_text: cover.cta_text ?? def.cta_text,
+    trust_line: cover.trust_line ?? def.trust_line,
     background_image_url: cover.background_image_url ?? '',
     background_color: cover.background_color ?? '#050505',
+    banner_text: cover.banner_text ?? def.banner_text,
+    show_banner: cover.show_banner !== 'false',
+    trust_bullets: cover.trust_bullets ?? def.trust_bullets,
+    ticker_text: cover.ticker_text ?? def.ticker_text,
+    cover_questions_count: cover.cover_questions_count
+      ? parseInt(cover.cover_questions_count, 10)
+      : (def.cover_questions_count ?? 2),
   };
 
   const gateConfig: GateConfig = {
@@ -472,6 +485,44 @@ export default function AssessmentPage() {
     setCurrentQuestionIndex((i) => Math.max(0, i - 1));
   }, []);
 
+  // ── Cover start handler (with optional pre-filled answers from mini quiz) ─────
+  const handleCoverStart = useCallback(
+    (prefilled: Map<string, AnswerRecord>, skipCount: number) => {
+      if (skipCount > 0 && prefilled.size > 0) {
+        // Merge pre-answered records into state
+        setAnswers(prefilled);
+
+        // Extract intake values from the pre-answers
+        const intakeQs = questions
+          .filter((q) => q.type === 'intake')
+          .sort((a, b) => a.order - b.order);
+
+        intakeQs.slice(0, skipCount).forEach((q, i) => {
+          const record = prefilled.get(q.id);
+          if (!record) return;
+          const label = Array.isArray(record.selected_label)
+            ? record.selected_label[0] ?? ''
+            : record.selected_label ?? '';
+
+          if (i === 0 && q.input_type === 'text') {
+            setSpaName(label);
+          } else if (i === 1) {
+            const tier = labelToRevenueTier(label);
+            if (tier) setRevenueTier(tier);
+          } else if (i === 2) {
+            const loc = labelToLocationCount(label);
+            if (loc) setLocationCount(loc);
+          }
+        });
+
+        setCurrentQuestionIndex(skipCount);
+      }
+      setStage('questions');
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [questions],
+  );
+
   // ── Loading guard ────────────────────────────────────────────────────────────
   if (loadingQuestions) {
     return <FullScreenSpinner />;
@@ -521,7 +572,11 @@ export default function AssessmentPage() {
           >
             <CoverPage
               config={coverConfig}
-              onStart={() => setStage('questions')}
+              intakeQuestions={questions
+                .filter((q) => q.type === 'intake')
+                .sort((a, b) => a.order - b.order)
+                .slice(0, coverConfig.cover_questions_count ?? 2)}
+              onStart={handleCoverStart}
             />
           </motion.div>
         )}
