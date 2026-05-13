@@ -268,7 +268,7 @@ export default function ResultsPage({
       {/* ── Results CTA ─────────────────────────────────────────────────────── */}
       <section className="py-16 px-4 no-print">
         <div className="max-w-3xl mx-auto">
-          <ResultsCTA config={ctaConfig} />
+          <ResultsCTA config={ctaConfig} spaName={lead.spa_name} />
         </div>
       </section>
     </div>

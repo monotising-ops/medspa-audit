@@ -105,6 +105,10 @@ function defaultCtaConfig(): ResultsCTAConfig {
     case_study_text: '',
     show_video: false,
     show_case_study: false,
+    show_locked_section: true,
+    locked_section_title: 'Our exact meta ads system for {spa_name} generating $11k/mo in bookings',
+    locked_section_lock_text: 'Unlock in a free discovery call',
+    locked_section_subtitle: 'Get on a 30 min call with us to reveal the exact system below',
   };
 }
 
@@ -156,6 +160,10 @@ function parseConfigs(grouped: Record<string, Record<string, string>>) {
     case_study_text: cta.case_study_text ?? '',
     show_video: cta.show_video === 'true',
     show_case_study: cta.show_case_study === 'true',
+    show_locked_section: cta.show_locked_section !== 'false',
+    locked_section_title: cta.locked_section_title ?? defaultCtaConfig().locked_section_title,
+    locked_section_lock_text: cta.locked_section_lock_text ?? defaultCtaConfig().locked_section_lock_text,
+    locked_section_subtitle: cta.locked_section_subtitle ?? defaultCtaConfig().locked_section_subtitle,
   };
 
   const accentColor = settings.accent_color ?? '';

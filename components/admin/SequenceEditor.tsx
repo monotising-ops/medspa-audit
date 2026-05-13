@@ -579,7 +579,36 @@ function ResultsCTASection({
           onChange={(v) => set('show_case_study', v)}
           label="Show case study section"
         />
+        <Toggle
+          checked={local.show_locked_section !== false}
+          onChange={(v) => set('show_locked_section', v)}
+          label="Show locked/blurred section above CTA"
+        />
       </div>
+
+      {local.show_locked_section !== false && (
+        <div className="space-y-4 pt-2 border-t border-[#1e1e1e]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#525252]">Locked Section</p>
+          <TextField
+            label="Section Title (use {spa_name} for personalization)"
+            value={local.locked_section_title ?? ''}
+            onChange={(v) => set('locked_section_title', v)}
+            placeholder="Our exact meta ads system for {spa_name} generating $11k/mo"
+          />
+          <TextField
+            label="Lock Overlay Text"
+            value={local.locked_section_lock_text ?? ''}
+            onChange={(v) => set('locked_section_lock_text', v)}
+            placeholder="Unlock in a free discovery call"
+          />
+          <TextField
+            label="Subtitle Below Lock"
+            value={local.locked_section_subtitle ?? ''}
+            onChange={(v) => set('locked_section_subtitle', v)}
+            placeholder="Get on a 30 min call with us to reveal the exact system below"
+          />
+        </div>
+      )}
 
       <SaveButton onClick={handleSave} saving={saving} />
     </div>

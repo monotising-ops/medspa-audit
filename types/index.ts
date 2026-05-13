@@ -150,6 +150,10 @@ export interface ResultsCTAConfig {
   case_study_text: string;
   show_video: boolean;
   show_case_study: boolean;
+  show_locked_section?: boolean;
+  locked_section_title?: string;
+  locked_section_lock_text?: string;
+  locked_section_subtitle?: string;
 }
 
 export interface AppSettings {

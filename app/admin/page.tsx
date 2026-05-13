@@ -224,7 +224,7 @@ export default function AdminPage() {
             ctaConfig={ctaConfig}
             onSaveCover={async (c) => { await saveConfig('cover', c as unknown as Record<string, string>); setCoverConfig(c); }}
             onSaveGate={async (g) => { await saveConfig('gate', { ...g, gate_enabled: String(g.gate_enabled), show_spa_name_field: String(g.show_spa_name_field), show_phone_field: String(g.show_phone_field) }); setGateConfig(g); }}
-            onSaveCTA={async (c) => { await saveConfig('results_cta', { ...c, show_video: String(c.show_video), show_case_study: String(c.show_case_study) }); setCtaConfig(c); }}
+            onSaveCTA={async (c) => { await saveConfig('results_cta', { ...c, show_video: String(c.show_video), show_case_study: String(c.show_case_study), show_locked_section: String(c.show_locked_section) }); setCtaConfig(c); }}
             onUploadImage={uploadImage}
           />
         )}

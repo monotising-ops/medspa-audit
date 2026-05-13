@@ -5,6 +5,7 @@ import type { ResultsCTAConfig } from '@/types';
 
 interface ResultsCTAProps {
   config: ResultsCTAConfig;
+  spaName?: string;
 }
 
 function QuoteIcon() {
@@ -41,7 +42,123 @@ function getEmbedUrl(url: string): string {
   return getYouTubeEmbedUrl(url) ?? getLoomEmbedUrl(url) ?? url;
 }
 
-export default function ResultsCTA({ config }: ResultsCTAProps) {
+function LockedSection({ title, lockText, subtitle }: { title: string; lockText: string; subtitle: string }) {
+  // Fake blurred rows — looks like a system/table
+  const fakeRows = [
+    ['Campaign Type', 'Audience', 'Budget', 'ROAS'],
+    ['Botox Awareness', 'Women 28–45 Local', '$1,200/mo', '4.2×'],
+    ['Filler Retargeting', 'Website Visitors 30d', '$600/mo', '6.8×'],
+    ['Body Contouring', 'Lookalike Top 5%', '$800/mo', '3.9×'],
+    ['Loyalty Reactivation', 'Past Patients 90d', '$400/mo', '9.1×'],
+  ];
+
+  return (
+    <div style={{ marginBottom: '40px' }}>
+      {/* Title */}
+      <h3
+        style={{
+          fontSize: 'clamp(18px, 4vw, 24px)',
+          fontWeight: 800,
+          color: '#f5f5f5',
+          lineHeight: 1.25,
+          marginBottom: '20px',
+          fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {title}
+      </h3>
+
+      {/* Locked blurred card */}
+      <div
+        style={{
+          position: 'relative',
+          borderRadius: '16px',
+          border: '1px solid #222',
+          overflow: 'hidden',
+          marginBottom: '16px',
+        }}
+      >
+        {/* Blurred fake content */}
+        <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none', background: '#0d0d0d', padding: '0' }}>
+          {fakeRows.map((row, ri) => (
+            <div
+              key={ri}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 2fr 1fr 1fr',
+                gap: '12px',
+                padding: '12px 16px',
+                borderBottom: ri < fakeRows.length - 1 ? '1px solid #1a1a1a' : 'none',
+                background: ri === 0 ? '#111' : ri % 2 === 0 ? '#0d0d0d' : '#0a0a0a',
+              }}
+            >
+              {row.map((cell, ci) => (
+                <span
+                  key={ci}
+                  style={{
+                    fontSize: ri === 0 ? '10px' : '13px',
+                    fontWeight: ri === 0 ? 700 : 400,
+                    color: ri === 0 ? '#525252' : ci === 3 ? '#D4A847' : '#737373',
+                    letterSpacing: ri === 0 ? '0.1em' : 0,
+                    textTransform: ri === 0 ? 'uppercase' : 'none',
+                    fontFamily: ri === 3 ? 'monospace' : 'inherit',
+                  }}
+                >
+                  {cell}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+
+        {/* Lock overlay */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(5,5,5,0.55)',
+            backdropFilter: 'blur(1px)',
+            gap: '8px',
+          }}
+        >
+          <span style={{ fontSize: '32px', lineHeight: 1 }}>🔒</span>
+          <span
+            style={{
+              color: '#f5f5f5',
+              fontSize: '13px',
+              fontWeight: 700,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
+            }}
+          >
+            {lockText}
+          </span>
+        </div>
+      </div>
+
+      {/* Subtitle below lock */}
+      <p
+        style={{
+          color: '#737373',
+          fontSize: '14px',
+          textAlign: 'center',
+          lineHeight: 1.6,
+          fontFamily: 'var(--font-body, "Outfit", sans-serif)',
+        }}
+      >
+        {subtitle}
+      </p>
+    </div>
+  );
+}
+
+export default function ResultsCTA({ config, spaName }: ResultsCTAProps) {
   const {
     headline,
     body,
@@ -52,7 +169,13 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
     case_study_text,
     show_video,
     show_case_study,
+    show_locked_section,
+    locked_section_title,
+    locked_section_lock_text,
+    locked_section_subtitle,
   } = config;
+
+  const resolvedTitle = (locked_section_title ?? '').replace('{spa_name}', spaName ?? 'Your Med Spa');
 
   return (
     <motion.section
@@ -71,6 +194,17 @@ export default function ResultsCTA({ config }: ResultsCTAProps) {
       />
 
       <div className="px-4 pt-10 pb-12 md:px-8 flex flex-col items-center text-center gap-6 max-w-2xl mx-auto">
+        {/* Locked section */}
+        {show_locked_section !== false && (
+          <div className="w-full text-left">
+            <LockedSection
+              title={resolvedTitle}
+              lockText={locked_section_lock_text ?? 'Unlock in a free discovery call'}
+              subtitle={locked_section_subtitle ?? 'Get on a 30 min call with us to reveal the exact system below'}
+            />
+          </div>
+        )}
+
         {/* Headline */}
         <h2 className="font-display text-3xl md:text-4xl font-bold text-[#f5f5f5] leading-tight">
           {headline}
