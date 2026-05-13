@@ -40,6 +40,44 @@ interface ResultsPageProps {
   comparisonImages?: ComparisonImages[];
 }
 
+function DownloadButton({ spaName }: { spaName: string }) {
+  return (
+    <button
+      type="button"
+      onClick={() => window.print()}
+      className="no-print"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '10px 20px',
+        borderRadius: '10px',
+        fontSize: '13px',
+        fontWeight: 600,
+        border: '1px solid rgba(212,168,71,0.4)',
+        background: 'rgba(212,168,71,0.08)',
+        color: '#D4A847',
+        cursor: 'pointer',
+        fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
+        transition: 'all 0.15s',
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = 'rgba(212,168,71,0.16)';
+        e.currentTarget.style.borderColor = '#D4A847';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'rgba(212,168,71,0.08)';
+        e.currentTarget.style.borderColor = 'rgba(212,168,71,0.4)';
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+      Download Report
+    </button>
+  );
+}
+
 export default function ResultsPage({
   lead,
   scoreResult,
@@ -220,8 +258,15 @@ export default function ResultsPage({
         </div>
       </section>
 
+      {/* ── Download button ──────────────────────────────────────────────────── */}
+      <section className="py-6 px-4 no-print">
+        <div className="max-w-3xl mx-auto flex justify-center">
+          <DownloadButton spaName={lead.spa_name} />
+        </div>
+      </section>
+
       {/* ── Results CTA ─────────────────────────────────────────────────────── */}
-      <section className="py-16 px-4">
+      <section className="py-16 px-4 no-print">
         <div className="max-w-3xl mx-auto">
           <ResultsCTA config={ctaConfig} />
         </div>

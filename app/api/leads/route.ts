@@ -7,9 +7,12 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const db = getAdminClient();
 
+  // Strip webhook-only fields that don't exist as DB columns
+  const { grade_label, domain_max, weakest_domain, ...insertData } = body;
+
   const { data: lead, error } = await db
     .from('leads')
-    .insert(body)
+    .insert(insertData)
     .select()
     .single();
 
