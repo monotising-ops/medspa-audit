@@ -5,6 +5,7 @@ import type { DomainScores } from '@/types';
 import MetaAdsFlowDiagram from '@/components/assessment/MetaAdsFlowDiagram';
 import AttributionFunnelDiagram from '@/components/assessment/AttributionFunnelDiagram';
 import BookingReminderDiagram from '@/components/assessment/BookingReminderDiagram';
+import SpeedToLeadDiagram from '@/components/assessment/SpeedToLeadDiagram';
 
 interface Recommendation {
   domain: keyof DomainScores;
@@ -89,21 +90,28 @@ export default function Recommendations({ recommendations }: RecommendationsProp
 
               {/* Lead gen — campaign structure diagram */}
               {rec.domain === 'lead_gen' && (
-                <div style={{ marginTop: '16px', maxWidth: '380px' }}>
+                <div style={{ marginTop: '16px', maxWidth: '380px', marginLeft: 'auto', marginRight: 'auto' }}>
                   <MetaAdsFlowDiagram />
+                </div>
+              )}
+
+              {/* Speed to lead — Lead Dialler KPI dashboard */}
+              {rec.domain === 'speed_to_lead' && (
+                <div style={{ marginTop: '16px', maxWidth: '380px', marginLeft: 'auto', marginRight: 'auto' }}>
+                  <SpeedToLeadDiagram />
                 </div>
               )}
 
               {/* Attribution — Meta Ads funnel metrics */}
               {rec.domain === 'attribution' && (
-                <div style={{ marginTop: '16px', maxWidth: '400px' }}>
+                <div style={{ marginTop: '16px', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
                   <AttributionFunnelDiagram />
                 </div>
               )}
 
               {/* Booking — SMS reminder sequence */}
               {rec.domain === 'booking' && (
-                <div style={{ marginTop: '16px', maxWidth: '380px' }}>
+                <div style={{ marginTop: '16px', maxWidth: '380px', marginLeft: 'auto', marginRight: 'auto' }}>
                   <BookingReminderDiagram />
                 </div>
               )}
