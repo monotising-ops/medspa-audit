@@ -106,7 +106,7 @@ function defaultCtaConfig(): ResultsCTAConfig {
     show_video: false,
     show_case_study: false,
     show_locked_section: true,
-    locked_section_title: 'Our exact meta ads system for {spa_name} generating $11k/mo in bookings',
+    locked_section_title: "Get access to our exact meta ads system for Aman & Niel's medspa generating $11k/mo in bookings",
     locked_section_lock_text: 'Unlock in a free discovery call',
     locked_section_subtitle: 'Get on a 30 min call with us to reveal the exact system below',
   };

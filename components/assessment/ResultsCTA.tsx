@@ -64,6 +64,7 @@ function LockedSection({ title, lockText, subtitle }: { title: string; lockText:
           marginBottom: '20px',
           fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
           letterSpacing: '-0.02em',
+          textAlign: 'center',
         }}
       >
         {title}
@@ -196,7 +197,7 @@ export default function ResultsCTA({ config, spaName }: ResultsCTAProps) {
       <div className="px-4 pt-10 pb-12 md:px-8 flex flex-col items-center text-center gap-6 max-w-2xl mx-auto">
         {/* Locked section */}
         {show_locked_section !== false && (
-          <div className="w-full text-left">
+          <div className="w-full">
             <LockedSection
               title={resolvedTitle}
               lockText={locked_section_lock_text ?? 'Unlock in a free discovery call'}
