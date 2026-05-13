@@ -107,8 +107,13 @@ export default function DomainAnalysis({
         <img
           src={imageUrl}
           alt={`${domainLabel} illustration`}
-          className="w-full rounded-lg mb-5 object-cover"
-          style={{ maxHeight: '280px' }}
+          style={{
+            display: 'block',
+            maxWidth: '100%',
+            height: 'auto',
+            borderRadius: '10px',
+            marginBottom: '20px',
+          }}
         />
       )}
 
