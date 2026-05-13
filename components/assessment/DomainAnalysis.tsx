@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { motion } from 'framer-motion';
 import type { DomainScores } from '@/types';
 import { domainScoreColor, domainBorderClass } from '@/lib/utils';
@@ -79,20 +78,6 @@ export default function DomainAnalysis({
         </span>
       </div>
 
-      {/* Image */}
-      {imageUrl && (
-        <div className="relative w-full max-h-48 mb-5 overflow-hidden rounded-lg">
-          <Image
-            src={imageUrl}
-            alt={`${domainLabel} illustration`}
-            width={800}
-            height={192}
-            className="w-full max-h-48 object-cover rounded-lg"
-            sizes="(max-width: 768px) 100vw, 700px"
-          />
-        </div>
-      )}
-
       {/* Analysis text */}
       <p
         className="text-sm text-[#a3a3a3] mb-5"
@@ -114,6 +99,17 @@ export default function DomainAnalysis({
             {bestPracticeText}
           </p>
         </div>
+      )}
+
+      {/* Image — below Best-in-Class, above Action This Week */}
+      {imageUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt={`${domainLabel} illustration`}
+          className="w-full rounded-lg mb-5 object-cover"
+          style={{ maxHeight: '280px' }}
+        />
       )}
 
       {/* Action This Week callout box */}
