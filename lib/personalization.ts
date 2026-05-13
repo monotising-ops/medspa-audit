@@ -6,6 +6,15 @@ import type {
   ContentType,
 } from '@/types';
 
+// Maps a domain percentage to a performance tier stored in the revenue_tier DB column.
+// Recommendations are now driven by how the lead scored on ALL of a domain's questions —
+// not by revenue bracket. ≤35% = Low, ≤65% = Mid, >65% = High.
+export function domainPctToTier(pct: number): RevenueTier {
+  if (pct <= 0.35) return 'under_20k';
+  if (pct <= 0.65) return '20k_50k';
+  return '50k_100k';
+}
+
 export function renderTemplate(
   template: string,
   vars: { spa_name: string; treatments: string }

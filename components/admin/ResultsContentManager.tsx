@@ -35,15 +35,17 @@ const CONTENT_SECTIONS: { type: ContentType; label: string; description: string 
   { type: 'analysis', label: 'Analysis', description: 'Score-range based text shown in results' },
   { type: 'best_practice', label: 'Best Practice', description: 'One per domain' },
   { type: 'tip', label: 'Actionable Tip', description: 'One per domain' },
-  { type: 'recommendation', label: 'Recommendations', description: 'Per revenue tier' },
+  { type: 'recommendation', label: 'Recommendations', description: 'Per performance level (score-based)' },
 ];
 
+// For recommendations these map to performance tiers (score-based), not revenue.
+// Low Performer = ≤35% domain score, Mid = 35–65%, High = >65%.
 const REVENUE_TIERS: { value: RevenueTier; label: string }[] = [
-  { value: 'under_20k', label: 'Under $20K/mo' },
-  { value: '20k_50k', label: '$20K–$50K/mo' },
-  { value: '50k_100k', label: '$50K–$100K/mo' },
-  { value: '100k_150k', label: '$100K–$150K/mo' },
-  { value: '150k_plus', label: '$150K+/mo' },
+  { value: 'under_20k', label: 'Low Performer (≤35% score)' },
+  { value: '20k_50k', label: 'Mid Performer (35–65% score)' },
+  { value: '50k_100k', label: 'High Performer (>65% score)' },
+  { value: '100k_150k', label: '(unused)' },
+  { value: '150k_plus', label: '(unused)' },
 ];
 
 const GRADE_ROWS: { grade: Grade; label: string }[] = [
@@ -76,7 +78,7 @@ function scoreRangeLabel(min: number, max: number): string {
 }
 
 function revenueTierLabel(tier: RevenueTier | null): string {
-  if (!tier) return 'All Tiers';
+  if (!tier) return 'All Performers';
   return REVENUE_TIERS.find((t) => t.value === tier)?.label ?? tier;
 }
 

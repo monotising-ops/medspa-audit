@@ -6,7 +6,7 @@ import DomainAnalysis from '@/components/assessment/DomainAnalysis';
 import SystemComparison from '@/components/assessment/SystemComparison';
 import Recommendations from '@/components/assessment/Recommendations';
 import ResultsCTA from '@/components/assessment/ResultsCTA';
-import { findContent, renderTemplate, buildPersonalizationVars } from '@/lib/personalization';
+import { findContent, renderTemplate, buildPersonalizationVars, domainPctToTier, getDomainInsightText } from '@/lib/personalization';
 import { DOMAIN_LABELS } from '@/types';
 import type {
   Lead,
@@ -104,40 +104,35 @@ export default function ResultsPage({
 
   const recommendations = topDomains
     .map((domain, idx) => {
-      // Try revenue-tier-specific recommendation first, then fall back to null-tier
-      let content = findContent(
-        contents,
-        domain,
-        'recommendation',
-        domain_scores[domain],
-        lead.revenue_tier,
-      );
+      const pct = domain_percentages[domain];
+      // Derive performance tier from how they scored on ALL questions for this domain
+      const performanceTier = domainPctToTier(pct);
 
-      if (!content) {
-        content = findContent(
-          contents,
-          domain,
-          'recommendation',
-          domain_scores[domain],
-          null,
-        );
+      // 1. Try performance-tier-specific DB content
+      let content = findContent(contents, domain, 'recommendation', domain_scores[domain], performanceTier);
+      // 2. Fall back to any null-tier DB content in range
+      if (!content) content = findContent(contents, domain, 'recommendation', domain_scores[domain], null);
+
+      let body: string;
+      let headline: string;
+
+      if (content) {
+        body = renderTemplate(content.body, personalizationVars);
+        headline = body.split('\n').find((l) => l.trim().length > 0) ?? body;
+      } else {
+        // 3. Hardcoded fallback — still score-based, uses domain percentage
+        body = getDomainInsightText(domain, pct, []);
+        headline = body.split('\n').find((l) => l.trim().length > 0) ?? body;
       }
-
-      if (!content) return null;
-
-      const rendered = renderTemplate(content.body, personalizationVars);
-      // Use the first non-empty line as headline; the full rendered text as body
-      const firstLine = rendered.split('\n').find((l) => l.trim().length > 0) ?? rendered;
 
       return {
         domain: domain as keyof DomainScores,
         domainLabel: DOMAIN_LABELS[domain],
-        headline: firstLine.trim(),
-        body: rendered.trim(),
+        headline: headline.trim(),
+        body: body.trim(),
         priority: idx + 1,
       };
     })
-    .filter((r): r is NonNullable<typeof r> => r !== null)
     .slice(0, 5);
 
   return (
