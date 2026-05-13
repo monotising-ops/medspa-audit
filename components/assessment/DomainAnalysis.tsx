@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import type { DomainScores } from '@/types';
 import { domainScoreColor, domainBorderClass } from '@/lib/utils';
-import MetaAdsFlowDiagram from '@/components/assessment/MetaAdsFlowDiagram';
 
 interface DomainAnalysisProps {
   domain: keyof DomainScores;
@@ -104,7 +103,7 @@ export default function DomainAnalysis({
       )}
 
       {/* Image — below Best-in-Class, above Action This Week */}
-      {imageUrl ? (
+      {imageUrl && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={imageUrl}
@@ -117,11 +116,7 @@ export default function DomainAnalysis({
             marginBottom: '20px',
           }}
         />
-      ) : domain === 'lead_gen' ? (
-        <div style={{ marginBottom: '20px' }}>
-          <MetaAdsFlowDiagram />
-        </div>
-      ) : null}
+      )}
 
       {/* Action This Week callout box */}
       {tipText && (

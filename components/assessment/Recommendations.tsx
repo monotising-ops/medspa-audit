@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import type { DomainScores } from '@/types';
+import MetaAdsFlowDiagram from '@/components/assessment/MetaAdsFlowDiagram';
 
 interface Recommendation {
   domain: keyof DomainScores;
@@ -83,6 +84,13 @@ export default function Recommendations({ recommendations }: RecommendationsProp
               >
                 {rec.body}
               </p>
+
+              {/* Meta ads flow diagram — lead gen card only */}
+              {rec.domain === 'lead_gen' && (
+                <div style={{ marginTop: '16px', maxWidth: '380px' }}>
+                  <MetaAdsFlowDiagram />
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
