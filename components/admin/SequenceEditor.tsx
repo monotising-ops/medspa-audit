@@ -456,13 +456,37 @@ function GateSection({
         placeholder="We never spam. Unsubscribe anytime."
       />
 
-      <div className="pt-1">
+      <div className="space-y-3 pt-1">
         <Toggle
           checked={local.gate_enabled}
           onChange={(v) => set('gate_enabled', v)}
           label="Gate enabled (require email before showing results)"
         />
+        <Toggle
+          checked={local.show_spa_name_field !== false}
+          onChange={(v) => set('show_spa_name_field', v)}
+          label="Show spa name field"
+        />
+        <Toggle
+          checked={local.show_phone_field === true}
+          onChange={(v) => set('show_phone_field', v)}
+          label="Show phone number field"
+        />
       </div>
+
+      <TextField
+        label="Spa Name Field Label"
+        value={local.spa_name_field_label ?? 'Med Spa Name'}
+        onChange={(v) => set('spa_name_field_label', v)}
+        placeholder="Med Spa Name"
+      />
+
+      <TextField
+        label="Phone Field Label"
+        value={local.phone_field_label ?? 'Phone Number'}
+        onChange={(v) => set('phone_field_label', v)}
+        placeholder="Phone Number"
+      />
 
       <SaveButton onClick={handleSave} saving={saving} />
     </div>

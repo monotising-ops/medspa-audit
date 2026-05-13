@@ -87,6 +87,10 @@ function defaultGateConfig(): GateConfig {
     cta_text: 'Unlock My Report →',
     privacy_text: 'We respect your privacy. No spam, ever.',
     gate_enabled: true,
+    show_spa_name_field: true,
+    spa_name_field_label: 'Med Spa Name',
+    show_phone_field: false,
+    phone_field_label: 'Phone Number',
   };
 }
 
@@ -136,6 +140,10 @@ function parseConfigs(grouped: Record<string, Record<string, string>>) {
     cta_text: gate.cta_text ?? defaultGateConfig().cta_text,
     privacy_text: gate.privacy_text ?? defaultGateConfig().privacy_text,
     gate_enabled: gate.gate_enabled !== 'false',
+    show_spa_name_field: gate.show_spa_name_field !== 'false',
+    spa_name_field_label: gate.spa_name_field_label ?? 'Med Spa Name',
+    show_phone_field: gate.show_phone_field === 'true',
+    phone_field_label: gate.phone_field_label ?? 'Phone Number',
   };
 
   const ctaConfig: ResultsCTAConfig = {

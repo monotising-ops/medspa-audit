@@ -10,6 +10,7 @@ interface GateFormValues {
   name: string;
   email: string;
   spaName: string;
+  phone: string;
 }
 
 interface GateModalProps {
@@ -47,7 +48,8 @@ export default function GateModal({
     if (isSubmitting) return;
     setIsSubmitting(true);
     try {
-      await onUnlock(data.name.trim(), data.email.trim(), data.spaName.trim());
+      const spaName = config.show_spa_name_field !== false ? data.spaName.trim() : '';
+      await onUnlock(data.name.trim(), data.email.trim(), spaName);
     } finally {
       setIsSubmitting(false);
     }
@@ -188,42 +190,74 @@ export default function GateModal({
                     )}
                   </div>
 
-                  {/* Med Spa Name */}
-                  <div className="flex flex-col gap-1">
-                    <label
-                      htmlFor="gate-spa-name"
-                      className="text-xs font-medium"
-                      style={{ color: '#737373', fontFamily: 'var(--font-body)' }}
-                    >
-                      Med Spa Name
-                    </label>
-                    <input
-                      id="gate-spa-name"
-                      type="text"
-                      autoComplete="organization"
-                      placeholder="Glow Studio"
-                      {...register('spaName', { required: 'Med spa name is required' })}
-                      className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
-                      style={{
-                        background: '#0a0a0a',
-                        border: `1px solid ${errors.spaName ? '#ef4444' : '#1e1e1e'}`,
-                        color: '#f5f5f5',
-                        fontFamily: 'var(--font-body, "Outfit", sans-serif)',
-                        transition: 'border-color 0.15s',
-                      }}
-                      onFocus={(e) => {
-                        if (!errors.spaName) e.currentTarget.style.borderColor = '#D4A847';
-                      }}
-                      onBlur={(e) => {
-                        if (!errors.spaName) e.currentTarget.style.borderColor = '#1e1e1e';
-                      }}
-                    />
-                    {errors.spaName && (
-                      <span className="text-xs" style={{ color: '#ef4444' }}>
-                        {errors.spaName.message}
-                      </span>
-                    )}
-                  </div>
+                  {/* Spa Name (optional) */}
+                  {config.show_spa_name_field !== false && (
+                    <div className="flex flex-col gap-1">
+                      <label
+                        htmlFor="gate-spa-name"
+                        className="text-xs font-medium"
+                        style={{ color: '#737373', fontFamily: 'var(--font-body)' }}
+                      >
+                        {config.spa_name_field_label ?? 'Med Spa Name'}
+                      </label>
+                      <input
+                        id="gate-spa-name"
+                        type="text"
+                        autoComplete="organization"
+                        placeholder="Glow Studio"
+                        {...register('spaName', { required: `${config.spa_name_field_label ?? 'Med Spa Name'} is required` })}
+                        className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                        style={{
+                          background: '#0a0a0a',
+                          border: `1px solid ${errors.spaName ? '#ef4444' : '#1e1e1e'}`,
+                          color: '#f5f5f5',
+                          fontFamily: 'var(--font-body, "Outfit", sans-serif)',
+                          transition: 'border-color 0.15s',
+                        }}
+                        onFocus={(e) => {
+                          if (!errors.spaName) e.currentTarget.style.borderColor = '#D4A847';
+                        }}
+                        onBlur={(e) => {
+                          if (!errors.spaName) e.currentTarget.style.borderColor = '#1e1e1e';
+                        }}
+                      />
+                      {errors.spaName && (
+                        <span className="text-xs" style={{ color: '#ef4444' }}>
+                          {errors.spaName.message}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Phone (optional) */}
+                  {config.show_phone_field && (
+                    <div className="flex flex-col gap-1">
+                      <label
+                        htmlFor="gate-phone"
+                        className="text-xs font-medium"
+                        style={{ color: '#737373', fontFamily: 'var(--font-body)' }}
+                      >
+                        {config.phone_field_label ?? 'Phone Number'}
+                      </label>
+                      <input
+                        id="gate-phone"
+                        type="tel"
+                        autoComplete="tel"
+                        placeholder="+1 (555) 000-0000"
+                        {...register('phone')}
+                        className="w-full px-4 py-2.5 rounded-xl text-sm outline-none"
+                        style={{
+                          background: '#0a0a0a',
+                          border: '1px solid #1e1e1e',
+                          color: '#f5f5f5',
+                          fontFamily: 'var(--font-body, "Outfit", sans-serif)',
+                          transition: 'border-color 0.15s',
+                        }}
+                        onFocus={(e) => { e.currentTarget.style.borderColor = '#D4A847'; }}
+                        onBlur={(e) => { e.currentTarget.style.borderColor = '#1e1e1e'; }}
+                      />
+                    </div>
+                  )}
 
                   {/* Submit */}
                   <button

@@ -133,6 +133,10 @@ export interface GateConfig {
   cta_text: string;
   privacy_text: string;
   gate_enabled: boolean;
+  show_spa_name_field?: boolean;   // default true
+  spa_name_field_label?: string;   // default "Med Spa Name"
+  show_phone_field?: boolean;      // default false
+  phone_field_label?: string;      // default "Phone Number"
 }
 
 export interface ResultsCTAConfig {

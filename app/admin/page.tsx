@@ -130,7 +130,12 @@ export default function AdminPage() {
         const { configs, gradeTiers: gt } = await configRes.json();
         setGradeTiers(gt ?? []);
         if (configs.cover) setCoverConfig(configs.cover as CoverConfig);
-        if (configs.gate) setGateConfig({ ...configs.gate, gate_enabled: configs.gate.gate_enabled !== 'false' });
+        if (configs.gate) setGateConfig({
+          ...configs.gate,
+          gate_enabled: configs.gate.gate_enabled !== 'false',
+          show_spa_name_field: configs.gate.show_spa_name_field !== 'false',
+          show_phone_field: configs.gate.show_phone_field === 'true',
+        });
         if (configs.results_cta) setCtaConfig({ ...configs.results_cta, show_video: configs.results_cta.show_video === 'true', show_case_study: configs.results_cta.show_case_study !== 'false' });
         if (configs.settings) setAppSettings({ ...configs.settings, assessment_active: configs.settings.assessment_active !== 'false', show_video: false, show_case_study: true });
       }
@@ -218,7 +223,7 @@ export default function AdminPage() {
             gateConfig={gateConfig}
             ctaConfig={ctaConfig}
             onSaveCover={async (c) => { await saveConfig('cover', c as unknown as Record<string, string>); setCoverConfig(c); }}
-            onSaveGate={async (g) => { await saveConfig('gate', { ...g, gate_enabled: String(g.gate_enabled) }); setGateConfig(g); }}
+            onSaveGate={async (g) => { await saveConfig('gate', { ...g, gate_enabled: String(g.gate_enabled), show_spa_name_field: String(g.show_spa_name_field), show_phone_field: String(g.show_phone_field) }); setGateConfig(g); }}
             onSaveCTA={async (c) => { await saveConfig('results_cta', { ...c, show_video: String(c.show_video), show_case_study: String(c.show_case_study) }); setCtaConfig(c); }}
             onUploadImage={uploadImage}
           />
