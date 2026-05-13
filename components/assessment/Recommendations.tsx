@@ -3,6 +3,8 @@
 import { motion } from 'framer-motion';
 import type { DomainScores } from '@/types';
 import MetaAdsFlowDiagram from '@/components/assessment/MetaAdsFlowDiagram';
+import AttributionFunnelDiagram from '@/components/assessment/AttributionFunnelDiagram';
+import BookingReminderDiagram from '@/components/assessment/BookingReminderDiagram';
 
 interface Recommendation {
   domain: keyof DomainScores;
@@ -85,10 +87,24 @@ export default function Recommendations({ recommendations }: RecommendationsProp
                 {rec.body}
               </p>
 
-              {/* Meta ads flow diagram — lead gen card only */}
+              {/* Lead gen — campaign structure diagram */}
               {rec.domain === 'lead_gen' && (
                 <div style={{ marginTop: '16px', maxWidth: '380px' }}>
                   <MetaAdsFlowDiagram />
+                </div>
+              )}
+
+              {/* Attribution — Meta Ads funnel metrics */}
+              {rec.domain === 'attribution' && (
+                <div style={{ marginTop: '16px', maxWidth: '400px' }}>
+                  <AttributionFunnelDiagram />
+                </div>
+              )}
+
+              {/* Booking — SMS reminder sequence */}
+              {rec.domain === 'booking' && (
+                <div style={{ marginTop: '16px', maxWidth: '380px' }}>
+                  <BookingReminderDiagram />
                 </div>
               )}
             </div>
