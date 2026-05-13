@@ -75,6 +75,7 @@ export interface Lead {
   created_at: string;
   name: string;
   email: string;
+  phone?: string | null;
   spa_name: string;
   revenue_tier: RevenueTier;
   location_count: LocationCount;

@@ -410,6 +410,7 @@ export default function AssessmentPage() {
     finalSpaName: string,
     computed: ScoreResult,
     finalAnswers: Map<string, AnswerRecord>,
+    phone?: string,
   ): Promise<void> {
     const answersArray = Array.from(finalAnswers.values());
 
@@ -418,6 +419,7 @@ export default function AssessmentPage() {
     const payload = {
       name,
       email,
+      ...(phone ? { phone } : {}),
       spa_name: finalSpaName,
       revenue_tier: revenueTier ?? 'under_20k',
       location_count: locationCount ?? '1',
@@ -454,6 +456,7 @@ export default function AssessmentPage() {
       created_at: new Date().toISOString(),
       name,
       email,
+      phone: phone ?? null,
       spa_name: finalSpaName,
       revenue_tier: revenueTier ?? 'under_20k',
       location_count: locationCount ?? '1',
@@ -474,10 +477,10 @@ export default function AssessmentPage() {
 
   // ── Gate unlock handler ──────────────────────────────────────────────────────
   const handleUnlock = useCallback(
-    async (name: string, email: string, finalSpaName: string) => {
+    async (name: string, email: string, finalSpaName: string, phone?: string) => {
       if (!scoreResult) return;
 
-      await submitLead(name, email, finalSpaName || spaName || 'Your Spa', scoreResult, answers);
+      await submitLead(name, email, finalSpaName || spaName || 'Your Spa', scoreResult, answers, phone);
 
       setIsRevealing(true);
       setTimeout(() => {

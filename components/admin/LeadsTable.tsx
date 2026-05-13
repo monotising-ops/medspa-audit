@@ -244,6 +244,12 @@ function ExpandedRow({ lead, colSpan }: ExpandedRowProps) {
     <tr className="bg-[#0a0a0a]">
       <td colSpan={colSpan} className="px-4 py-4 border-t border-[#1f1f1f]">
         <div className="space-y-2">
+          {lead.phone && (
+            <p className="text-xs text-[#a1a1aa] mb-2">
+              <span className="text-[#525252]">Phone: </span>
+              <span className="text-[#D4A847] font-medium">{lead.phone}</span>
+            </p>
+          )}
           <p className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wide mb-3">
             Answer Breakdown
           </p>
@@ -692,13 +698,16 @@ export default function LeadsTable({
                       </span>
                     </td>
 
-                    {/* Name + email */}
+                    {/* Name + email + phone */}
                     <td className="px-4 py-3 align-middle">
                       <div className="space-y-0.5">
                         <p className="text-sm font-medium text-[#f5f5f5] whitespace-nowrap">
                           {lead.name}
                         </p>
                         <p className="text-xs text-[#71717a]">{lead.email}</p>
+                        {lead.phone && (
+                          <p className="text-xs text-[#D4A847]">{lead.phone}</p>
+                        )}
                       </div>
                     </td>
 

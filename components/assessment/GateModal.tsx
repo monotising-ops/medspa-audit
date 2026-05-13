@@ -15,7 +15,7 @@ interface GateFormValues {
 
 interface GateModalProps {
   resultsComponent: React.ReactNode;
-  onUnlock: (name: string, email: string, spaName: string) => Promise<void>;
+  onUnlock: (name: string, email: string, spaName: string, phone?: string) => Promise<void>;
   prefillSpaName?: string;
   config: GateConfig;
   isRevealing: boolean;
@@ -49,7 +49,8 @@ export default function GateModal({
     setIsSubmitting(true);
     try {
       const spaName = config.show_spa_name_field !== false ? data.spaName.trim() : '';
-      await onUnlock(data.name.trim(), data.email.trim(), spaName);
+      const phone = config.show_phone_field ? data.phone?.trim() : undefined;
+      await onUnlock(data.name.trim(), data.email.trim(), spaName, phone);
     } finally {
       setIsSubmitting(false);
     }

@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
       created_at: l.created_at,
       name: l.name,
       email: l.email,
+      phone: l.phone ?? '',
       spa_name: l.spa_name,
       revenue_tier: l.revenue_tier,
       location_count: l.location_count,
