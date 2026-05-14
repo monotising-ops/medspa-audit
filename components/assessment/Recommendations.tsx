@@ -80,14 +80,6 @@ export default function Recommendations({ recommendations }: RecommendationsProp
                 {rec.headline}
               </h3>
 
-              {/* Body */}
-              <p
-                className="text-sm text-[#737373]"
-                style={{ lineHeight: 1.6 }}
-              >
-                {rec.body}
-              </p>
-
               {/* Lead gen — campaign structure diagram */}
               {rec.domain === 'lead_gen' && (
                 <div style={{ marginTop: '16px', maxWidth: '380px', marginLeft: 'auto', marginRight: 'auto' }}>
