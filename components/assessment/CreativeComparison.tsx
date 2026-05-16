@@ -36,10 +36,10 @@ interface PanelProps {
   label: string;
   imageUrl: string;
   variant: 'bad' | 'good';
-  imageHeight: number;
+  aspectRatio?: string;
 }
 
-function Panel({ label, imageUrl, variant, imageHeight }: PanelProps) {
+function Panel({ label, imageUrl, variant, aspectRatio = '4/5' }: PanelProps) {
   const color = variant === 'bad' ? '#ef4444' : '#22c55e';
   return (
     <div
@@ -94,7 +94,7 @@ function Panel({ label, imageUrl, variant, imageHeight }: PanelProps) {
       {/* Image area */}
       <div
         style={{
-          height: `${imageHeight}px`,
+          aspectRatio,
           background: '#080808',
           display: 'flex',
           alignItems: 'center',
@@ -107,7 +107,7 @@ function Panel({ label, imageUrl, variant, imageHeight }: PanelProps) {
           <img
             src={imageUrl}
             alt={label}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
           />
         ) : (
           <ImagePlaceholder />
@@ -122,14 +122,14 @@ interface RowProps {
   leftImageUrl: string;
   rightLabel: string;
   rightImageUrl: string;
-  imageHeight: number;
+  aspectRatio?: string;
 }
 
-function ComparisonRow({ leftLabel, leftImageUrl, rightLabel, rightImageUrl, imageHeight }: RowProps) {
+function ComparisonRow({ leftLabel, leftImageUrl, rightLabel, rightImageUrl, aspectRatio }: RowProps) {
   return (
     <div style={{ display: 'flex', gap: '12px' }}>
-      <Panel label={leftLabel} imageUrl={leftImageUrl} variant="bad" imageHeight={imageHeight} />
-      <Panel label={rightLabel} imageUrl={rightImageUrl} variant="good" imageHeight={imageHeight} />
+      <Panel label={leftLabel} imageUrl={leftImageUrl} variant="bad" aspectRatio={aspectRatio} />
+      <Panel label={rightLabel} imageUrl={rightImageUrl} variant="good" aspectRatio={aspectRatio} />
     </div>
   );
 }
@@ -161,23 +161,23 @@ export default function CreativeComparison({ config }: { config: CreativeCompari
         </div>
       </div>
 
-      {/* Row 1 — Ad creatives (tall) */}
+      {/* Row 1 — Ad creatives (portrait) */}
       <ComparisonRow
         leftLabel={config.row1_left_label}
         leftImageUrl={config.row1_left_image_url}
         rightLabel={config.row1_right_label}
         rightImageUrl={config.row1_right_image_url}
-        imageHeight={220}
+        aspectRatio="4/5"
       />
 
-      {/* Row 2 — Campaign structure (shorter) */}
+      {/* Row 2 — Campaign structure (landscape) */}
       {config.show_row2 && (
         <ComparisonRow
           leftLabel={config.row2_left_label}
           leftImageUrl={config.row2_left_image_url}
           rightLabel={config.row2_right_label}
           rightImageUrl={config.row2_right_image_url}
-          imageHeight={150}
+          aspectRatio="16/9"
         />
       )}
     </motion.div>
