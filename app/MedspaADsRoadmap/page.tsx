@@ -20,6 +20,7 @@ import type {
   CoverConfig,
   GateConfig,
   ResultsCTAConfig,
+  CreativeComparisonConfig,
   GradeTier,
   RevenueTier,
   LocationCount,
@@ -114,11 +115,27 @@ function defaultCtaConfig(): ResultsCTAConfig {
 
 // ─── Config parser ────────────────────────────────────────────────────────────
 
+function defaultCreativeComparisonConfig(): CreativeComparisonConfig {
+  return {
+    headline: 'The Difference Between Ads That Cost You & Ads That Convert',
+    row1_left_label: 'Average Ad Creative',
+    row1_left_image_url: '',
+    row1_right_label: 'Ad Creative Optimized for Conversion',
+    row1_right_image_url: '',
+    row2_left_label: 'Boosting Posts',
+    row2_left_image_url: '',
+    row2_right_label: 'Structured Campaign',
+    row2_right_image_url: '',
+    show_row2: true,
+  };
+}
+
 function parseConfigs(grouped: Record<string, Record<string, string>>) {
   const cover = grouped['cover'] ?? {};
   const gate = grouped['gate'] ?? {};
   const cta = grouped['results_cta'] ?? {};
   const settings = grouped['settings'] ?? {};
+  const creative = grouped['creative_comparison'] ?? {};
 
   const def = defaultCoverConfig();
   const coverConfig: CoverConfig = {
@@ -166,11 +183,25 @@ function parseConfigs(grouped: Record<string, Record<string, string>>) {
     locked_section_subtitle: cta.locked_section_subtitle ?? defaultCtaConfig().locked_section_subtitle,
   };
 
+  const creativeDef = defaultCreativeComparisonConfig();
+  const creativeComparisonConfig: CreativeComparisonConfig = {
+    headline: creative.headline ?? creativeDef.headline,
+    row1_left_label: creative.row1_left_label ?? creativeDef.row1_left_label,
+    row1_left_image_url: creative.row1_left_image_url ?? '',
+    row1_right_label: creative.row1_right_label ?? creativeDef.row1_right_label,
+    row1_right_image_url: creative.row1_right_image_url ?? '',
+    row2_left_label: creative.row2_left_label ?? creativeDef.row2_left_label,
+    row2_left_image_url: creative.row2_left_image_url ?? '',
+    row2_right_label: creative.row2_right_label ?? creativeDef.row2_right_label,
+    row2_right_image_url: creative.row2_right_image_url ?? '',
+    show_row2: creative.show_row2 !== 'false',
+  };
+
   const accentColor = settings.accent_color ?? '';
   const chartType: 'radar' | 'bar' =
     settings.chart_type === 'bar' ? 'bar' : 'radar';
 
-  return { coverConfig, gateConfig, ctaConfig, accentColor, chartType };
+  return { coverConfig, gateConfig, ctaConfig, creativeComparisonConfig, accentColor, chartType };
 }
 
 // ─── Spinner ─────────────────────────────────────────────────────────────────
@@ -243,6 +274,7 @@ export default function AssessmentPage() {
   const [coverConfig, setCoverConfig] = useState<CoverConfig>(defaultCoverConfig());
   const [gateConfig, setGateConfig] = useState<GateConfig>(defaultGateConfig());
   const [ctaConfig, setCtaConfig] = useState<ResultsCTAConfig>(defaultCtaConfig());
+  const [creativeComparisonConfig, setCreativeComparisonConfig] = useState<CreativeComparisonConfig>(defaultCreativeComparisonConfig());
   const [gradeTiers, setGradeTiers] = useState<GradeTier[]>(defaultGradeTiers());
   const [chartType, setChartType] = useState<'radar' | 'bar'>('radar');
   const [accentColor, setAccentColor] = useState('');
@@ -266,6 +298,7 @@ export default function AssessmentPage() {
           setCoverConfig(parsed.coverConfig);
           setGateConfig(parsed.gateConfig);
           setCtaConfig(parsed.ctaConfig);
+          setCreativeComparisonConfig(parsed.creativeComparisonConfig);
           setChartType(parsed.chartType);
           if (parsed.accentColor) {
             setAccentColor(parsed.accentColor);
@@ -663,6 +696,7 @@ export default function AssessmentPage() {
                   coverConfig={coverConfig}
                   ctaConfig={ctaConfig}
                   chartType={chartType}
+                  creativeComparisonConfig={creativeComparisonConfig}
                 />
               }
             />
@@ -684,6 +718,7 @@ export default function AssessmentPage() {
               coverConfig={coverConfig}
               ctaConfig={ctaConfig}
               chartType={chartType}
+              creativeComparisonConfig={creativeComparisonConfig}
             />
           </motion.div>
         )}

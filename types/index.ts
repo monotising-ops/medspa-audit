@@ -27,7 +27,7 @@ export type LeadTag = 'hot' | 'warm' | 'cool' | 'contacted' | 'booked';
 
 export type ContentType = 'analysis' | 'best_practice' | 'tip' | 'recommendation';
 
-export type ConfigSection = 'cover' | 'gate' | 'results_cta' | 'settings';
+export type ConfigSection = 'cover' | 'gate' | 'results_cta' | 'settings' | 'creative_comparison';
 
 export type ChartType = 'radar' | 'bar';
 
@@ -154,6 +154,19 @@ export interface ResultsCTAConfig {
   locked_section_title?: string;
   locked_section_lock_text?: string;
   locked_section_subtitle?: string;
+}
+
+export interface CreativeComparisonConfig {
+  headline: string;
+  row1_left_label: string;
+  row1_left_image_url: string;
+  row1_right_label: string;
+  row1_right_image_url: string;
+  row2_left_label: string;
+  row2_left_image_url: string;
+  row2_right_label: string;
+  row2_right_image_url: string;
+  show_row2: boolean;
 }
 
 export interface AppSettings {

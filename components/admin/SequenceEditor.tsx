@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
-import type { CoverConfig, GateConfig, ResultsCTAConfig } from '@/types';
+import type { CoverConfig, GateConfig, ResultsCTAConfig, CreativeComparisonConfig } from '@/types';
 import { cn } from '@/lib/utils';
 
 // ─── Toggle Switch ────────────────────────────────────────────────────────────
@@ -615,15 +615,220 @@ function ResultsCTASection({
   );
 }
 
+// ─── Creative Comparison Section ─────────────────────────────────────────────
+
+function ImageUploadField({
+  label,
+  value,
+  onUpload,
+  onClear,
+  uploading,
+}: {
+  label: string;
+  value: string;
+  onUpload: () => void;
+  onClear: () => void;
+  uploading: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-medium text-[#a1a1aa] mb-1">{label}</label>
+      {value && (
+        <div className="mb-2 flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="" className="h-16 w-24 rounded-md object-cover border border-[#2a2a2a]" />
+          <button type="button" onClick={onClear} className="text-xs text-[#71717a] hover:text-red-400 transition-colors">
+            Remove
+          </button>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={onUpload}
+        disabled={uploading}
+        className="flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] px-2.5 py-1.5 text-xs text-[#a1a1aa] hover:border-[#D4A847] hover:text-[#f5f5f5] disabled:opacity-50 transition-colors"
+      >
+        {uploading ? 'Uploading…' : value ? 'Replace Image' : 'Upload Image'}
+      </button>
+    </div>
+  );
+}
+
+function CreativeComparisonSection({
+  config,
+  onSave,
+  onUploadImage,
+}: {
+  config: CreativeComparisonConfig;
+  onSave: (c: CreativeComparisonConfig) => Promise<void>;
+  onUploadImage: (file: File, section: string) => Promise<string>;
+}) {
+  const [local, setLocal] = useState<CreativeComparisonConfig>({ ...config });
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+
+  const fileRefs = {
+    row1_left: useRef<HTMLInputElement>(null),
+    row1_right: useRef<HTMLInputElement>(null),
+    row2_left: useRef<HTMLInputElement>(null),
+    row2_right: useRef<HTMLInputElement>(null),
+  };
+
+  function set<K extends keyof CreativeComparisonConfig>(key: K, val: CreativeComparisonConfig[K]) {
+    setLocal((prev) => ({ ...prev, [key]: val }));
+  }
+
+  async function handleUpload(field: keyof typeof fileRefs, file: File) {
+    setUploading((u) => ({ ...u, [field]: true }));
+    try {
+      const url = await onUploadImage(file, `creative/${field}`);
+      set(`${field}_image_url` as keyof CreativeComparisonConfig, url as CreativeComparisonConfig[keyof CreativeComparisonConfig]);
+    } catch {
+      toast.error('Image upload failed');
+    } finally {
+      setUploading((u) => ({ ...u, [field]: false }));
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await onSave(local);
+      toast.success('Creative comparison saved');
+    } catch {
+      toast.error('Failed to save');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Hidden file inputs */}
+      {(Object.keys(fileRefs) as Array<keyof typeof fileRefs>).map((field) => (
+        <input
+          key={field}
+          ref={fileRefs[field]}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(field, f); e.target.value = ''; }}
+        />
+      ))}
+
+      <TextField
+        label="Section Headline"
+        value={local.headline}
+        onChange={(v) => set('headline', v)}
+        placeholder="The Difference Between Ads That Cost You & Ads That Convert"
+      />
+
+      <Toggle
+        label="Show second row (campaign structure)"
+        checked={local.show_row2}
+        onChange={(v) => set('show_row2', v)}
+      />
+
+      {/* Row 1 */}
+      <div className="space-y-3 pt-2 border-t border-[#1e1e1e]">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#525252]">
+          Row 1 — Ad Creatives
+        </p>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-red-400 uppercase tracking-wide">✗ Left (Bad)</p>
+            <TextField
+              label="Caption"
+              value={local.row1_left_label}
+              onChange={(v) => set('row1_left_label', v)}
+              placeholder="Average Ad Creative"
+            />
+            <ImageUploadField
+              label="Image"
+              value={local.row1_left_image_url}
+              onUpload={() => fileRefs.row1_left.current?.click()}
+              onClear={() => set('row1_left_image_url', '')}
+              uploading={uploading.row1_left ?? false}
+            />
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-green-400 uppercase tracking-wide">✓ Right (Good)</p>
+            <TextField
+              label="Caption"
+              value={local.row1_right_label}
+              onChange={(v) => set('row1_right_label', v)}
+              placeholder="Optimized for Conversion"
+            />
+            <ImageUploadField
+              label="Image"
+              value={local.row1_right_image_url}
+              onUpload={() => fileRefs.row1_right.current?.click()}
+              onClear={() => set('row1_right_image_url', '')}
+              uploading={uploading.row1_right ?? false}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2 */}
+      {local.show_row2 && (
+        <div className="space-y-3 pt-2 border-t border-[#1e1e1e]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#525252]">
+            Row 2 — Campaign Structure
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-red-400 uppercase tracking-wide">✗ Left (Bad)</p>
+              <TextField
+                label="Caption"
+                value={local.row2_left_label}
+                onChange={(v) => set('row2_left_label', v)}
+                placeholder="Boosting Posts"
+              />
+              <ImageUploadField
+                label="Image"
+                value={local.row2_left_image_url}
+                onUpload={() => fileRefs.row2_left.current?.click()}
+                onClear={() => set('row2_left_image_url', '')}
+                uploading={uploading.row2_left ?? false}
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-medium text-green-400 uppercase tracking-wide">✓ Right (Good)</p>
+              <TextField
+                label="Caption"
+                value={local.row2_right_label}
+                onChange={(v) => set('row2_right_label', v)}
+                placeholder="Structured Campaign"
+              />
+              <ImageUploadField
+                label="Image"
+                value={local.row2_right_image_url}
+                onUpload={() => fileRefs.row2_right.current?.click()}
+                onClear={() => set('row2_right_image_url', '')}
+                uploading={uploading.row2_right ?? false}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <SaveButton onClick={handleSave} saving={saving} />
+    </div>
+  );
+}
+
 // ─── Main Export ──────────────────────────────────────────────────────────────
 
 interface SequenceEditorProps {
   coverConfig: CoverConfig;
   gateConfig: GateConfig;
   ctaConfig: ResultsCTAConfig;
+  creativeComparisonConfig: CreativeComparisonConfig;
   onSaveCover: (config: CoverConfig) => Promise<void>;
   onSaveGate: (config: GateConfig) => Promise<void>;
   onSaveCTA: (config: ResultsCTAConfig) => Promise<void>;
+  onSaveCreativeComparison: (config: CreativeComparisonConfig) => Promise<void>;
   onUploadImage: (file: File, section: string) => Promise<string>;
 }
 
@@ -631,9 +836,11 @@ export default function SequenceEditor({
   coverConfig,
   gateConfig,
   ctaConfig,
+  creativeComparisonConfig,
   onSaveCover,
   onSaveGate,
   onSaveCTA,
+  onSaveCreativeComparison,
   onUploadImage,
 }: SequenceEditorProps) {
   return (
@@ -652,6 +859,14 @@ export default function SequenceEditor({
 
       <Section title="Results CTA Settings">
         <ResultsCTASection config={ctaConfig} onSave={onSaveCTA} />
+      </Section>
+
+      <Section title="Creative Comparison (What Not To Do vs What Works)">
+        <CreativeComparisonSection
+          config={creativeComparisonConfig}
+          onSave={onSaveCreativeComparison}
+          onUploadImage={onUploadImage}
+        />
       </Section>
     </div>
   );

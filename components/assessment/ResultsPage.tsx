@@ -6,6 +6,7 @@ import DomainAnalysis from '@/components/assessment/DomainAnalysis';
 import SystemComparison from '@/components/assessment/SystemComparison';
 import Recommendations from '@/components/assessment/Recommendations';
 import ResultsCTA from '@/components/assessment/ResultsCTA';
+import CreativeComparison from '@/components/assessment/CreativeComparison';
 import { findContent, renderTemplate, buildPersonalizationVars, domainPctToTier, getDomainInsightText } from '@/lib/personalization';
 import { DOMAIN_LABELS } from '@/types';
 import type {
@@ -15,6 +16,7 @@ import type {
   CoverConfig,
   ResultsCTAConfig,
   DomainScores,
+  CreativeComparisonConfig,
 } from '@/types';
 
 const DOMAIN_KEYS = [
@@ -38,6 +40,7 @@ interface ResultsPageProps {
   ctaConfig: ResultsCTAConfig;
   chartType: 'radar' | 'bar';
   comparisonImages?: ComparisonImages[];
+  creativeComparisonConfig: CreativeComparisonConfig;
 }
 
 function DownloadButton({ spaName }: { spaName: string }) {
@@ -85,6 +88,7 @@ export default function ResultsPage({
   ctaConfig,
   chartType,
   comparisonImages,
+  creativeComparisonConfig,
 }: ResultsPageProps) {
   const { domain_scores, domain_max_scores, domain_percentages, grade } = scoreResult;
   const personalizationVars = buildPersonalizationVars(lead.spa_name, lead.top_treatments);
@@ -250,6 +254,24 @@ export default function ResultsPage({
             Your Action Plan
           </h2>
           <Recommendations recommendations={recommendations} />
+        </div>
+      </section>
+
+      {/* ── Creative Comparison ─────────────────────────────────────────────── */}
+      <section className="py-12 px-4">
+        <div className="max-w-3xl mx-auto">
+          {creativeComparisonConfig.headline && (
+            <h2
+              className="text-xl font-bold mb-6"
+              style={{
+                fontFamily: 'var(--font-display, "Space Grotesk", sans-serif)',
+                color: '#f5f5f5',
+              }}
+            >
+              {creativeComparisonConfig.headline}
+            </h2>
+          )}
+          <CreativeComparison config={creativeComparisonConfig} />
         </div>
       </section>
 

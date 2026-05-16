@@ -16,6 +16,7 @@ import type {
   CoverConfig,
   GateConfig,
   ResultsCTAConfig,
+  CreativeComparisonConfig,
   AppSettings,
   InfoBankEntry,
 } from '@/types';
@@ -100,6 +101,10 @@ export default function AdminPage() {
     headline: '', body: '', primary_cta_text: '', primary_cta_url: '', secondary_cta_text: '',
     video_url: '', case_study_text: '', show_video: false, show_case_study: true,
   });
+  const [creativeComparisonConfig, setCreativeComparisonConfig] = useState<CreativeComparisonConfig>({
+    headline: '', row1_left_label: '', row1_left_image_url: '', row1_right_label: '', row1_right_image_url: '',
+    row2_left_label: '', row2_left_image_url: '', row2_right_label: '', row2_right_image_url: '', show_row2: true,
+  });
   const [appSettings, setAppSettings] = useState<AppSettings>({
     assessment_active: true, webhook_url: '', accent_color: '#3b82f6', logo_url: '', admin_password_hash: '', chart_type: 'bar',
   });
@@ -137,6 +142,7 @@ export default function AdminPage() {
           show_phone_field: configs.gate.show_phone_field === 'true',
         });
         if (configs.results_cta) setCtaConfig({ ...configs.results_cta, show_video: configs.results_cta.show_video === 'true', show_case_study: configs.results_cta.show_case_study !== 'false' });
+        if (configs.creative_comparison) setCreativeComparisonConfig({ ...configs.creative_comparison, show_row2: configs.creative_comparison.show_row2 !== 'false' });
         if (configs.settings) setAppSettings({ ...configs.settings, assessment_active: configs.settings.assessment_active !== 'false', show_video: false, show_case_study: true });
       }
     } catch (e) {
@@ -222,9 +228,11 @@ export default function AdminPage() {
             coverConfig={coverConfig}
             gateConfig={gateConfig}
             ctaConfig={ctaConfig}
+            creativeComparisonConfig={creativeComparisonConfig}
             onSaveCover={async (c) => { await saveConfig('cover', c as unknown as Record<string, string>); setCoverConfig(c); }}
             onSaveGate={async (g) => { await saveConfig('gate', { ...g, gate_enabled: String(g.gate_enabled), show_spa_name_field: String(g.show_spa_name_field), show_phone_field: String(g.show_phone_field) }); setGateConfig(g); }}
             onSaveCTA={async (c) => { await saveConfig('results_cta', { ...c, show_video: String(c.show_video), show_case_study: String(c.show_case_study), show_locked_section: String(c.show_locked_section) }); setCtaConfig(c); }}
+            onSaveCreativeComparison={async (c) => { await saveConfig('creative_comparison', { ...c, show_row2: String(c.show_row2) }); setCreativeComparisonConfig(c); }}
             onUploadImage={uploadImage}
           />
         )}
