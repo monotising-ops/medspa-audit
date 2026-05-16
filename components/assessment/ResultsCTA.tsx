@@ -42,16 +42,7 @@ function getEmbedUrl(url: string): string {
   return getYouTubeEmbedUrl(url) ?? getLoomEmbedUrl(url) ?? url;
 }
 
-function LockedSection({ title, lockText, subtitle }: { title: string; lockText: string; subtitle: string }) {
-  // Fake blurred rows — looks like a system/table
-  const fakeRows = [
-    ['Campaign Type', 'Audience', 'Budget', 'ROAS'],
-    ['Botox Awareness', 'Women 28–45 Local', '$1,200/mo', '4.2×'],
-    ['Filler Retargeting', 'Website Visitors 30d', '$600/mo', '6.8×'],
-    ['Body Contouring', 'Lookalike Top 5%', '$800/mo', '3.9×'],
-    ['Loyalty Reactivation', 'Past Patients 90d', '$400/mo', '9.1×'],
-  ];
-
+function LockedSection({ title, lockText, subtitle, imageUrl }: { title: string; lockText: string; subtitle: string; imageUrl?: string }) {
   return (
     <div style={{ marginBottom: '40px' }}>
       {/* Title */}
@@ -78,39 +69,31 @@ function LockedSection({ title, lockText, subtitle }: { title: string; lockText:
           border: '1px solid #222',
           overflow: 'hidden',
           marginBottom: '16px',
+          aspectRatio: '2.14 / 1',
         }}
       >
-        {/* Blurred fake content */}
-        <div style={{ filter: 'blur(5px)', pointerEvents: 'none', userSelect: 'none', background: '#0d0d0d', padding: '0' }}>
-          {fakeRows.map((row, ri) => (
-            <div
-              key={ri}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 2fr 1fr 1fr',
-                gap: '12px',
-                padding: '12px 16px',
-                borderBottom: ri < fakeRows.length - 1 ? '1px solid #1a1a1a' : 'none',
-                background: ri === 0 ? '#111' : ri % 2 === 0 ? '#0d0d0d' : '#0a0a0a',
-              }}
-            >
-              {row.map((cell, ci) => (
-                <span
-                  key={ci}
-                  style={{
-                    fontSize: ri === 0 ? '10px' : '13px',
-                    fontWeight: ri === 0 ? 700 : 400,
-                    color: ri === 0 ? '#525252' : ci === 3 ? '#D4A847' : '#737373',
-                    letterSpacing: ri === 0 ? '0.1em' : 0,
-                    textTransform: ri === 0 ? 'uppercase' : 'none',
-                    fontFamily: ri === 3 ? 'monospace' : 'inherit',
-                  }}
-                >
-                  {cell}
-                </span>
-              ))}
-            </div>
-          ))}
+        {/* Blurred background image */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            filter: 'blur(6px)',
+            transform: 'scale(1.05)',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            background: '#0d0d0d',
+          }}
+        >
+          {imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl}
+              alt=""
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }}
+            />
+          ) : (
+            <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #111 0%, #0a0a0a 100%)' }} />
+          )}
         </div>
 
         {/* Lock overlay */}
@@ -122,15 +105,14 @@ function LockedSection({ title, lockText, subtitle }: { title: string; lockText:
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(5,5,5,0.55)',
-            backdropFilter: 'blur(1px)',
+            background: 'rgba(5,5,5,0.45)',
             gap: '8px',
           }}
         >
           <span style={{ fontSize: '32px', lineHeight: 1 }}>🔒</span>
           <span
             style={{
-              color: '#f5f5f5',
+              color: '#525252',
               fontSize: '13px',
               fontWeight: 700,
               letterSpacing: '0.12em',
@@ -174,6 +156,7 @@ export default function ResultsCTA({ config, spaName }: ResultsCTAProps) {
     locked_section_title,
     locked_section_lock_text,
     locked_section_subtitle,
+    locked_section_image_url,
   } = config;
 
   const resolvedTitle = (locked_section_title ?? '').replace('{spa_name}', spaName ?? 'Your Med Spa');
@@ -202,6 +185,7 @@ export default function ResultsCTA({ config, spaName }: ResultsCTAProps) {
               title={resolvedTitle}
               lockText={locked_section_lock_text ?? 'Unlock in a free discovery call'}
               subtitle={locked_section_subtitle ?? 'Get on a 30 min call with us to reveal the exact system below'}
+              imageUrl={locked_section_image_url}
             />
           </div>
         )}

@@ -498,12 +498,16 @@ function GateSection({
 function ResultsCTASection({
   config,
   onSave,
+  onUploadImage,
 }: {
   config: ResultsCTAConfig;
   onSave: (c: ResultsCTAConfig) => Promise<void>;
+  onUploadImage: (file: File, section: string) => Promise<string>;
 }) {
   const [local, setLocal] = useState<ResultsCTAConfig>({ ...config });
   const [saving, setSaving] = useState(false);
+  const [uploadingLockedImg, setUploadingLockedImg] = useState(false);
+  const lockedImgRef = useRef<HTMLInputElement>(null);
 
   function set<K extends keyof ResultsCTAConfig>(key: K, val: ResultsCTAConfig[K]) {
     setLocal((prev) => ({ ...prev, [key]: val }));
@@ -607,6 +611,36 @@ function ResultsCTASection({
             onChange={(v) => set('locked_section_subtitle', v)}
             placeholder="Get on a 30 min call with us to reveal the exact system below"
           />
+          <div>
+            <label className="block text-sm font-medium text-[#a1a1aa] mb-1.5">Blurred Background Image</label>
+            {local.locked_section_image_url && (
+              <img src={local.locked_section_image_url} alt="Locked section preview" className="w-full rounded-lg mb-2 object-cover" style={{ maxHeight: '120px' }} />
+            )}
+            <button
+              type="button"
+              onClick={() => lockedImgRef.current?.click()}
+              disabled={uploadingLockedImg}
+              className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#2a2a2a] text-[#a1a1aa] hover:text-white hover:border-[#3b82f6] transition-colors disabled:opacity-50"
+            >
+              {uploadingLockedImg ? 'Uploading…' : local.locked_section_image_url ? 'Replace Image' : 'Upload Image'}
+            </button>
+            <input
+              ref={lockedImgRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setUploadingLockedImg(true);
+                try {
+                  const url = await onUploadImage(file, 'cta-locked');
+                  set('locked_section_image_url', url);
+                } catch { toast.error('Upload failed'); }
+                finally { setUploadingLockedImg(false); e.target.value = ''; }
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -858,7 +892,7 @@ export default function SequenceEditor({
       </Section>
 
       <Section title="Results CTA Settings">
-        <ResultsCTASection config={ctaConfig} onSave={onSaveCTA} />
+        <ResultsCTASection config={ctaConfig} onSave={onSaveCTA} onUploadImage={onUploadImage} />
       </Section>
 
       <Section title="Creative Comparison (What Not To Do vs What Works)">

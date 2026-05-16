@@ -154,6 +154,7 @@ export interface ResultsCTAConfig {
   locked_section_title?: string;
   locked_section_lock_text?: string;
   locked_section_subtitle?: string;
+  locked_section_image_url?: string;
 }
 
 export interface CreativeComparisonConfig {

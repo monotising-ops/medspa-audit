@@ -181,6 +181,7 @@ function parseConfigs(grouped: Record<string, Record<string, string>>) {
     locked_section_title: cta.locked_section_title ?? defaultCtaConfig().locked_section_title,
     locked_section_lock_text: cta.locked_section_lock_text ?? defaultCtaConfig().locked_section_lock_text,
     locked_section_subtitle: cta.locked_section_subtitle ?? defaultCtaConfig().locked_section_subtitle,
+    locked_section_image_url: cta.locked_section_image_url ?? '',
   };
 
   const creativeDef = defaultCreativeComparisonConfig();
