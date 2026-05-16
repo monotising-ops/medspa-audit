@@ -112,7 +112,7 @@ function LockedSection({ title, lockText, subtitle, imageUrl }: { title: string;
           <span style={{ fontSize: '32px', lineHeight: 1 }}>🔒</span>
           <span
             style={{
-              color: '#525252',
+              color: '#f5f5f5',
               fontSize: '13px',
               fontWeight: 700,
               letterSpacing: '0.12em',
