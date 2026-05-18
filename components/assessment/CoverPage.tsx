@@ -528,10 +528,11 @@ export default function CoverPage({ config, intakeQuestions, onStart }: CoverPag
                 src={config.hero_image_url}
                 alt="Report preview"
                 style={{
-                  maxWidth: '420px',
+                  maxWidth: '520px',
                   width: '100%',
                   objectFit: 'contain',
                   display: 'block',
+                  filter: 'drop-shadow(0 24px 48px rgba(0,0,0,0.7))',
                 }}
               />
             ) : (
