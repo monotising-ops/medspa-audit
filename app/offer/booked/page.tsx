@@ -1,13 +1,13 @@
 'use client';
 
-// TODO: Add Calendly embed URL — replace CALENDLY_PLACEHOLDER_URL with actual link
+// TODO: Add Calendly embed — replace placeholder div with actual Calendly inline widget
 // TODO: Add Meta Pixel — fire CompleteRegistration event on mount
 // TODO: Replace placeholder testimonial containers with real screenshot images
 // TODO: Verify form data was submitted (redirect to /offer if sessionStorage is empty)
 
 import { useEffect, useState } from 'react';
 
-const CALENDLY_PLACEHOLDER_URL = 'https://calendly.com/your-link-here'; // TODO: replace with real URL
+const CALENDLY_FALLBACK = 'https://calendly.com/your-link-here';
 
 const BOOKED_STYLES = `
   @keyframes fadeUp {
@@ -74,10 +74,15 @@ function TestimonialPlaceholder({ label }: { label: string }) {
 
 export default function BookedPage() {
   const [name, setName] = useState('');
+  const [calendlyUrl, setCalendlyUrl] = useState(CALENDLY_FALLBACK);
 
   useEffect(() => {
     const n = sessionStorage.getItem('offer_lead_name');
     if (n) setName(n);
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then(({ configs }) => { if (configs?.vsl?.calendly_url) setCalendlyUrl(configs.vsl.calendly_url); })
+      .catch(() => {});
   }, []);
 
   return (
@@ -133,7 +138,7 @@ export default function BookedPage() {
         {/* ── Section 2: Calendly embed ────────────────────────────────────────── */}
         <section style={{ padding: '0 20px 64px', maxWidth: '760px', margin: '0 auto', animation: 'fadeUp 0.5s 0.15s ease-out both' }}>
           {/* TODO: Replace this placeholder with actual Calendly embed script:
-              <div class="calendly-inline-widget" data-url="CALENDLY_PLACEHOLDER_URL"
+              <div className="calendly-inline-widget" data-url={calendlyUrl}
                    style="min-width:320px;height:700px;" />
               <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async />
           */}
@@ -162,7 +167,7 @@ export default function BookedPage() {
               <p style={{ color: '#555', fontSize: '13px' }}>Paste your Calendly URL in the TODO above</p>
             </div>
             <a
-              href={CALENDLY_PLACEHOLDER_URL}
+              href={calendlyUrl}
               target="_blank"
               rel="noopener noreferrer"
               style={{

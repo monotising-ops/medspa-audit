@@ -8,6 +8,28 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import type { VSLConfig } from '@/types';
+
+// ─── Default VSL config (used before API loads) ───────────────────────────────
+
+function defaultVSL(): VSLConfig {
+  return {
+    hero_headline: 'Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads',
+    hero_subheadline: 'Only pay when patients actually book.',
+    hero_cta_text: 'Book My Free Strategy Call →',
+    hero_tagline: 'Takes 60 seconds · No credit card · Free strategy call',
+    risk_headline: 'We put our money where our mouth is.',
+    risk_body: "If we don't deliver real, booked appointments for your clinic — you don't pay. That's our guarantee.",
+    proof_headline: 'See why clinics across the US and Canada trust Monotising',
+    calendly_url: '',
+    result1_name: "Aman & Niel's Med Spa", result1_location: 'Local Market',
+    result1_before: '$7,800 adspend · 1.26× ROAS', result1_after: '$4,060 adspend · 4.43× ROAS · $17,700+ collected', result1_highlight: '71 confirmed bookings in one month',
+    result2_name: 'Family-Run Med Spa', result2_location: 'New York, NY',
+    result2_before: '$3,200/mo · ~8 new patients/mo', result2_after: '$2,800/mo · 31 new patients/mo', result2_highlight: '4× new patient volume at lower spend',
+    result3_name: 'Aesthetic Clinic', result3_location: 'Toronto, ON',
+    result3_before: 'No paid advertising', result3_after: '$11,000+ in bookings in first 30 days', result3_highlight: 'First 5-figure month from a cold start',
+  };
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -222,7 +244,7 @@ function ArrowBtn({ onClick, disabled, label = 'Continue' }: { onClick: () => vo
 
 // ─── Multi-Step Form ──────────────────────────────────────────────────────────
 
-function MultiStepForm() {
+function MultiStepForm({ ctaText = 'Book My Free Strategy Call →' }: { ctaText?: string }) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [animKey, setAnimKey] = useState(0);
@@ -469,7 +491,7 @@ function MultiStepForm() {
                 marginTop: '4px',
               }}
             >
-              {submitting ? 'Sending…' : 'Book My Free Strategy Call →'}
+              {submitting ? 'Sending…' : ctaText}
             </button>
             <p style={{ fontSize: '12px', color: '#444', textAlign: 'center', margin: 0 }}>
               No spam, ever. We'll only use this to confirm your call.
@@ -553,6 +575,22 @@ function TestimonialPlaceholder({ label }: { label: string }) {
 
 export default function OfferPage() {
   const formRef = useRef<HTMLDivElement>(null);
+  const [vsl, setVsl] = useState<VSLConfig>(defaultVSL());
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then(({ configs }) => {
+        if (configs?.vsl) setVsl((prev) => ({ ...prev, ...configs.vsl }));
+      })
+      .catch(() => {});
+  }, []);
+
+  const results = [
+    { id: 1, name: vsl.result1_name, location: vsl.result1_location, before: vsl.result1_before, after: vsl.result1_after, highlight: vsl.result1_highlight },
+    { id: 2, name: vsl.result2_name, location: vsl.result2_location, before: vsl.result2_before, after: vsl.result2_after, highlight: vsl.result2_highlight },
+    { id: 3, name: vsl.result3_name, location: vsl.result3_location, before: vsl.result3_before, after: vsl.result3_after, highlight: vsl.result3_highlight },
+  ];
 
   function scrollToForm() {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -565,89 +603,39 @@ export default function OfferPage() {
 
         {/* ── Section 1: Hero + Form ──────────────────────────────────────────── */}
         <section style={{ padding: '48px 20px 64px', textAlign: 'center' }}>
-          {/* Logo */}
           <div style={{ marginBottom: '32px', animation: 'fadeUp 0.5s ease-out both' }}>
             {/* TODO: Replace with actual Monotising logo image */}
-            <span style={{
-              fontSize: '13px',
-              letterSpacing: '0.22em',
-              textTransform: 'uppercase',
-              color: '#D4A853',
-              fontWeight: 600,
-            }}>
+            <span style={{ fontSize: '13px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#D4A853', fontWeight: 600 }}>
               Monotising
             </span>
           </div>
 
-          {/* Headline */}
           <div style={{ maxWidth: '600px', margin: '0 auto 16px', animation: 'fadeUp 0.5s 0.1s ease-out both' }}>
-            <h1 style={{
-              fontSize: 'clamp(30px, 6vw, 52px)',
-              fontWeight: 800,
-              lineHeight: 1.1,
-              letterSpacing: '-0.03em',
-              color: '#F5F5F5',
-              margin: 0,
-            }}>
-              Fill Your Med Spa Calendar With{' '}
-              <span style={{ color: '#D4A853' }}>Booked Appointments</span>
-              {' '}— Not Just Leads
+            <h1 style={{ fontSize: 'clamp(30px, 6vw, 52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.03em', color: '#F5F5F5', margin: 0 }}>
+              {vsl.hero_headline}
             </h1>
           </div>
 
-          {/* Subheadline */}
-          <p style={{
-            fontSize: '16px',
-            color: '#4CAF50',
-            fontWeight: 600,
-            marginBottom: '40px',
-            animation: 'fadeUp 0.5s 0.2s ease-out both',
-            letterSpacing: '0.01em',
-          }}>
-            Only pay when patients actually book.
+          <p style={{ fontSize: '16px', color: '#4CAF50', fontWeight: 600, marginBottom: '40px', animation: 'fadeUp 0.5s 0.2s ease-out both', letterSpacing: '0.01em' }}>
+            {vsl.hero_subheadline}
           </p>
 
-          {/* Form */}
           <div ref={formRef} style={{ animation: 'fadeUp 0.5s 0.3s ease-out both' }}>
-            <MultiStepForm />
+            <MultiStepForm ctaText={vsl.hero_cta_text} />
           </div>
 
-          <p style={{ fontSize: '12px', color: '#444', marginTop: '16px' }}>
-            Takes 60 seconds · No credit card · Free strategy call
-          </p>
+          <p style={{ fontSize: '12px', color: '#444', marginTop: '16px' }}>{vsl.hero_tagline}</p>
         </section>
 
         {/* ── Section 2: Risk Reversal ───────────────────────────────────────── */}
-        <section style={{
-          padding: '72px 20px',
-          background: 'linear-gradient(180deg, #0A0A0A 0%, #0D0D0D 50%, #0A0A0A 100%)',
-          textAlign: 'center',
-          borderTop: '1px solid #131313',
-          borderBottom: '1px solid #131313',
-        }}>
+        <section style={{ padding: '72px 20px', background: 'linear-gradient(180deg, #0A0A0A 0%, #0D0D0D 50%, #0A0A0A 100%)', textAlign: 'center', borderTop: '1px solid #131313', borderBottom: '1px solid #131313' }}>
           <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-            <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '20px' }}>
-              Our Guarantee
-            </p>
-            <h2 style={{
-              fontSize: 'clamp(26px, 5vw, 42px)',
-              fontWeight: 800,
-              color: '#F5F5F5',
-              lineHeight: 1.15,
-              letterSpacing: '-0.025em',
-              marginBottom: '20px',
-            }}>
-              We put our money where our mouth is.
+            <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '20px' }}>Our Guarantee</p>
+            <h2 style={{ fontSize: 'clamp(26px, 5vw, 42px)', fontWeight: 800, color: '#F5F5F5', lineHeight: 1.15, letterSpacing: '-0.025em', marginBottom: '20px' }}>
+              {vsl.risk_headline}
             </h2>
-            <p style={{
-              fontSize: 'clamp(16px, 3vw, 20px)',
-              color: '#4CAF50',
-              fontWeight: 600,
-              lineHeight: 1.5,
-              margin: 0,
-            }}>
-              If we don't deliver real, booked appointments for your clinic — you don't pay.
-              That's our guarantee.
+            <p style={{ fontSize: 'clamp(16px, 3vw, 20px)', color: '#4CAF50', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
+              {vsl.risk_body}
             </p>
           </div>
         </section>
@@ -655,96 +643,45 @@ export default function OfferPage() {
         {/* ── Section 3: Client Results ──────────────────────────────────────── */}
         <section style={{ padding: '72px 0 40px' }}>
           <div style={{ textAlign: 'center', padding: '0 20px', marginBottom: '40px' }}>
-            <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '12px' }}>
-              Real Results
-            </p>
-            <h2 style={{
-              fontSize: 'clamp(22px, 4vw, 34px)',
-              fontWeight: 800,
-              color: '#F5F5F5',
-              lineHeight: 1.2,
-              letterSpacing: '-0.02em',
-              maxWidth: '520px',
-              margin: '0 auto',
-            }}>
-              See why clinics across the US and Canada trust Monotising
+            <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '12px' }}>Real Results</p>
+            <h2 style={{ fontSize: 'clamp(22px, 4vw, 34px)', fontWeight: 800, color: '#F5F5F5', lineHeight: 1.2, letterSpacing: '-0.02em', maxWidth: '520px', margin: '0 auto' }}>
+              {vsl.proof_headline}
             </h2>
           </div>
-
-          {/* Horizontal scroll on mobile */}
-          <div
-            className="offer-scroll"
-            style={{
-              display: 'flex',
-              gap: '16px',
-              overflowX: 'auto',
-              padding: '0 20px 20px',
-            }}
-          >
-            {CLIENT_RESULTS.map((r) => (
-              <ClientResultCard key={r.id} {...r} />
-            ))}
+          <div className="offer-scroll" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '0 20px 20px' }}>
+            {results.map((r) => <ClientResultCard key={r.id} {...r} />)}
           </div>
         </section>
 
         {/* ── Section 4: Testimonials ────────────────────────────────────────── */}
         <section style={{ padding: '40px 0 72px' }}>
           <div style={{ textAlign: 'center', padding: '0 20px', marginBottom: '28px' }}>
-            <p style={{ color: '#AAAAAA', fontSize: '15px' }}>
-              Don't take our word for it — here's what clients say
-            </p>
+            <p style={{ color: '#AAAAAA', fontSize: '15px' }}>Don't take our word for it — here's what clients say</p>
           </div>
-
-          {/* Horizontal scroll testimonials */}
-          <div
-            className="offer-scroll"
-            style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '0 20px 8px' }}
-          >
+          <div className="offer-scroll" style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '0 20px 8px' }}>
             <TestimonialPlaceholder label="DM screenshot 1" />
             <TestimonialPlaceholder label="DM screenshot 2" />
             <TestimonialPlaceholder label="DM screenshot 3" />
             <TestimonialPlaceholder label="DM screenshot 4" />
           </div>
-
-          {/* TODO: Add video testimonial embed section here
-              Structure: 2-col grid on desktop, single col on mobile
-              Each card: dark #141414 bg, 16:9 aspect ratio iframe, name + clinic below */}
+          {/* TODO: Add video testimonial embeds here */}
         </section>
 
         {/* ── Bottom CTA ─────────────────────────────────────────────────────── */}
-        <section style={{
-          padding: '56px 20px',
-          textAlign: 'center',
-          background: '#0D0D0D',
-          borderTop: '1px solid #131313',
-        }}>
+        <section style={{ padding: '56px 20px', textAlign: 'center', background: '#0D0D0D', borderTop: '1px solid #131313' }}>
           <p style={{ color: '#AAAAAA', fontSize: '16px', marginBottom: '24px', lineHeight: 1.5 }}>
             Ready to see if we're the right fit for your clinic?
           </p>
           <button
             type="button"
             onClick={scrollToForm}
-            style={{
-              padding: '16px 40px',
-              borderRadius: '10px',
-              fontSize: '16px',
-              fontWeight: 700,
-              border: 'none',
-              background: '#D4A853',
-              color: '#000',
-              cursor: 'pointer',
-              width: '100%',
-              maxWidth: '360px',
-              transition: 'opacity 0.15s',
-            }}
+            style={{ padding: '16px 40px', borderRadius: '10px', fontSize: '16px', fontWeight: 700, border: 'none', background: '#D4A853', color: '#000', cursor: 'pointer', width: '100%', maxWidth: '360px', transition: 'opacity 0.15s' }}
             onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
             onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
           >
             See If We're A Fit →
           </button>
-          <p style={{ fontSize: '12px', color: '#444', marginTop: '12px' }}>
-            Free 20-minute call · No obligation · No hard sell
-          </p>
+          <p style={{ fontSize: '12px', color: '#444', marginTop: '12px' }}>Free 20-minute call · No obligation · No hard sell</p>
         </section>
 
       </div>

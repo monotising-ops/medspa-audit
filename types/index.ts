@@ -27,7 +27,7 @@ export type LeadTag = 'hot' | 'warm' | 'cool' | 'contacted' | 'booked';
 
 export type ContentType = 'analysis' | 'best_practice' | 'tip' | 'recommendation';
 
-export type ConfigSection = 'cover' | 'gate' | 'results_cta' | 'settings' | 'creative_comparison';
+export type ConfigSection = 'cover' | 'gate' | 'results_cta' | 'settings' | 'creative_comparison' | 'vsl';
 
 export type ChartType = 'radar' | 'bar';
 
@@ -168,6 +168,32 @@ export interface CreativeComparisonConfig {
   row2_right_label: string;
   row2_right_image_url: string;
   show_row2: boolean;
+}
+
+export interface VSLConfig {
+  hero_headline: string;
+  hero_subheadline: string;
+  hero_cta_text: string;
+  hero_tagline: string;
+  risk_headline: string;
+  risk_body: string;
+  proof_headline: string;
+  calendly_url: string;
+  result1_name: string;
+  result1_location: string;
+  result1_before: string;
+  result1_after: string;
+  result1_highlight: string;
+  result2_name: string;
+  result2_location: string;
+  result2_before: string;
+  result2_after: string;
+  result2_highlight: string;
+  result3_name: string;
+  result3_location: string;
+  result3_before: string;
+  result3_after: string;
+  result3_highlight: string;
 }
 
 export interface AppSettings {

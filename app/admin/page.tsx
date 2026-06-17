@@ -8,6 +8,7 @@ import ResultsContentManager from '@/components/admin/ResultsContentManager';
 import LeadsTable from '@/components/admin/LeadsTable';
 import SettingsPanel from '@/components/admin/SettingsPanel';
 import InfoBank from '@/components/admin/InfoBank';
+import VSLEditor from '@/components/admin/VSLEditor';
 import type {
   Question,
   Lead,
@@ -19,9 +20,10 @@ import type {
   CreativeComparisonConfig,
   AppSettings,
   InfoBankEntry,
+  VSLConfig,
 } from '@/types';
 
-type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings';
+type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings' | 'vsl';
 
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('');
@@ -81,6 +83,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'content', label: 'Results Content' },
   { id: 'infobank', label: 'Info Bank' },
   { id: 'leads', label: 'Leads' },
+  { id: 'vsl', label: 'VSL Page' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -109,6 +112,22 @@ export default function AdminPage() {
     assessment_active: true, webhook_url: '', accent_color: '#3b82f6', logo_url: '', admin_password_hash: '', chart_type: 'bar',
   });
   const [infoBankEntries, setInfoBankEntries] = useState<InfoBankEntry[]>([]);
+  const [vslConfig, setVslConfig] = useState<VSLConfig>({
+    hero_headline: 'Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads',
+    hero_subheadline: 'Only pay when patients actually book.',
+    hero_cta_text: 'Book My Free Strategy Call →',
+    hero_tagline: 'Takes 60 seconds · No credit card · Free strategy call',
+    risk_headline: 'We put our money where our mouth is.',
+    risk_body: "If we don't deliver real, booked appointments for your clinic — you don't pay. That's our guarantee.",
+    proof_headline: 'See why clinics across the US and Canada trust Monotising',
+    calendly_url: '',
+    result1_name: "Aman & Niel's Med Spa", result1_location: 'Local Market',
+    result1_before: '$7,800 adspend · 1.26× ROAS', result1_after: '$4,060 adspend · 4.43× ROAS · $17,700+ collected', result1_highlight: '71 confirmed bookings in one month',
+    result2_name: 'Family-Run Med Spa', result2_location: 'New York, NY',
+    result2_before: '$3,200/mo · ~8 new patients/mo', result2_after: '$2,800/mo · 31 new patients/mo', result2_highlight: '4× new patient volume at lower spend',
+    result3_name: 'Aesthetic Clinic', result3_location: 'Toronto, ON',
+    result3_before: 'No paid advertising', result3_after: '$11,000+ in bookings in first 30 days', result3_highlight: 'First 5-figure month from a cold start',
+  });
   const [loading, setLoading] = useState(true);
 
   const authHeaders = useCallback(() => ({
@@ -144,6 +163,7 @@ export default function AdminPage() {
         if (configs.results_cta) setCtaConfig({ ...configs.results_cta, show_video: configs.results_cta.show_video === 'true', show_case_study: configs.results_cta.show_case_study !== 'false' });
         if (configs.creative_comparison) setCreativeComparisonConfig({ ...configs.creative_comparison, show_row2: configs.creative_comparison.show_row2 !== 'false' });
         if (configs.settings) setAppSettings({ ...configs.settings, assessment_active: configs.settings.assessment_active !== 'false', show_video: false, show_case_study: true });
+        if (configs.vsl) setVslConfig((prev) => ({ ...prev, ...configs.vsl }));
       }
     } catch (e) {
       toast.error('Failed to load data');
@@ -344,6 +364,15 @@ export default function AdminPage() {
               link.click();
             }}
             onRefresh={fetchAll}
+          />
+        )}
+        {tab === 'vsl' && (
+          <VSLEditor
+            config={vslConfig}
+            onSave={async (c) => {
+              await saveConfig('vsl', c as unknown as Record<string, string>);
+              setVslConfig(c);
+            }}
           />
         )}
         {tab === 'settings' && (
