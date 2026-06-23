@@ -104,6 +104,14 @@ const UPLOAD_FIELDS = [
 
 type FormData = Record<string, string>;
 type ChecklistData = Record<string, { checked: boolean; inputs: Record<string, string> }>;
+
+const TOTAL_FIELDS = 15 + 5;
+
+function calcPct(form: FormData, checklist: ChecklistData): number {
+  const filled = Object.values(form).filter((v) => typeof v === 'string' && v.trim().length > 0).length;
+  const checked = Object.values(checklist).filter((v) => v?.checked).length;
+  return Math.min(100, Math.round(((filled + checked) / TOTAL_FIELDS) * 100));
+}
 type UploadedFiles = Record<string, { url: string; name: string; path: string }[]>;
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
@@ -147,9 +155,12 @@ function SkipBtn({ active, onClick }: { active: boolean; onClick: () => void }) 
       onClick={onClick}
       title={active ? "Mark as complete" : "I'll come back to this"}
       style={{
-        flexShrink: 0, background: 'none', border: `1px solid ${active ? '#D4A853' : '#2a2a2a'}`, borderRadius: '6px',
+        flexShrink: 0, background: 'none',
+        border: `1px solid ${active ? '#D4A853' : 'rgba(239,68,68,0.4)'}`,
+        borderRadius: '6px',
         padding: '4px 8px', fontSize: '10px', fontWeight: 600, letterSpacing: '0.05em',
-        color: active ? '#D4A853' : '#444', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
+        color: active ? '#D4A853' : 'rgba(239,68,68,0.6)',
+        cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap',
       }}
     >
       {active ? '↩ Come back' : 'Skip for now'}
@@ -476,12 +487,14 @@ function OnboardingContent() {
   function updateForm(id: string, value: string) {
     const next = { ...formData, [id]: value };
     setFormData(next);
+    setCompletionPct(calcPct(next, checklistData));
     triggerSave(next, checklistData, skipped, uploadedFiles);
   }
 
   function updateChecklist(id: string, data: { checked: boolean; inputs: Record<string, string> }) {
     const next = { ...checklistData, [id]: data };
     setChecklistData(next);
+    setCompletionPct(calcPct(formData, next));
     triggerSave(formData, next, skipped, uploadedFiles);
   }
 
