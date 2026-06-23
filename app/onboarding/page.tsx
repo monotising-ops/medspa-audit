@@ -586,6 +586,14 @@ function OnboardingContent() {
   const skippedList = [...skipped];
   const clientLabel = clientId ? clientId.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
 
+  // Dynamic section numbering — only count sections that are visible
+  const SECTION_ORDER = ['roadmap', 'contact', 'creative', 'intake', 'brand_assets', 'checklist', 'kickoff'] as const;
+  const visibleSections = SECTION_ORDER.filter((id) => !hiddenSections.includes(id));
+  function sNum(id: typeof SECTION_ORDER[number]): string {
+    const i = visibleSections.indexOf(id);
+    return i >= 0 ? String(i + 1).padStart(2, '0') : '';
+  }
+
   // ── Invalid link ───────────────────────────────────────────────────────────
   if (!clientId) {
     return (
@@ -654,7 +662,7 @@ function OnboardingContent() {
           {/* ── Section 2: Roadmap ─────────────────────────────────────────── */}
           {!hiddenSections.includes('roadmap') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="01" title="Your Paid Acquisition Roadmap" subtitle="Here's what to expect over the next 20 days." />
+            <SectionHeader n={sNum('roadmap')} title="Your Paid Acquisition Roadmap" subtitle="Here's what to expect over the next 20 days." />
 
             <Card style={{ marginBottom: '24px', padding: 0, overflow: 'hidden' }}>
               {obConfig.roadmap_image_url ? (
@@ -688,7 +696,7 @@ function OnboardingContent() {
           {/* ── Section 3: Contact ─────────────────────────────────────────── */}
           {!hiddenSections.includes('contact') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="02" title="Your Direct Line to Me" />
+            <SectionHeader n={sNum('contact')} title="Your Direct Line to Me" />
             <Card style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span style={{ color: '#555', fontSize: '13px', minWidth: '50px' }}>Phone</span>
@@ -708,7 +716,7 @@ function OnboardingContent() {
           {/* ── Section 4: Creative Concept ────────────────────────────────── */}
           {!hiddenSections.includes('creative') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="03" title="Creative Direction" />
+            <SectionHeader n={sNum('creative')} title="Creative Direction" />
             <Card style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <p style={{ color: '#AAAAAA', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
                 We will share a demo of 3 ads to get an idea of your brand's styling. These are starting points — they'll evolve based on performance data.
@@ -725,7 +733,7 @@ function OnboardingContent() {
           {/* ── Section 5: Intake Form ─────────────────────────────────────── */}
           {!hiddenSections.includes('intake') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="04" title="Intake Form" subtitle="Fill out as much detail as possible. Your answers help us build campaigns tailored specifically to your clinic." />
+            <SectionHeader n={sNum('intake')} title="Intake Form" subtitle="Fill out as much detail as possible. Your answers help us build campaigns tailored specifically to your clinic." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {INTAKE_QUESTIONS.map((q) => (
                 <QuestionCard
@@ -745,7 +753,7 @@ function OnboardingContent() {
           {/* ── Section 6: Brand Assets ────────────────────────────────────── */}
           {!hiddenSections.includes('brand_assets') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="05" title="Brand Assets" subtitle="Upload your brand files so we can match your clinic's look and feel in the ad creatives." />
+            <SectionHeader n={sNum('brand_assets')} title="Brand Assets" subtitle="Upload your brand files so we can match your clinic's look and feel in the ad creatives." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {UPLOAD_FIELDS.map((field) => {
                 const skipId = `upload_${field.id}`;
@@ -782,7 +790,7 @@ function OnboardingContent() {
           {/* ── Section 7: Access Checklist ────────────────────────────────── */}
           {!hiddenSections.includes('checklist') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="06" title="Access Checklist" subtitle="We need access to a few things to get started. Each item has a tutorial if you're not sure how." />
+            <SectionHeader n={sNum('checklist')} title="Access Checklist" subtitle="We need access to a few things to get started. Each item has a tutorial if you're not sure how." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               {CHECKLIST_ITEMS.map((item) => (
                 <ChecklistCard
@@ -801,7 +809,7 @@ function OnboardingContent() {
           {/* ── Section 8: Kickoff Call ────────────────────────────────────── */}
           {!hiddenSections.includes('kickoff') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n="07" title="Book Your Kickoff Call" subtitle="Once you've completed the intake form and access checklist, book our kickoff call below." />
+            <SectionHeader n={sNum('kickoff')} title="Book Your Kickoff Call" subtitle="Once you've completed the intake form and access checklist, book our kickoff call below." />
             {obConfig.calendly_url ? (
               <div style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: '12px', overflow: 'hidden', minHeight: '600px' }}>
                 <iframe src={obConfig.calendly_url} width="100%" height="600" frameBorder="0" title="Book a call" />
