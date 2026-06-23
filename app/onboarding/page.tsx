@@ -495,6 +495,7 @@ function OnboardingContent() {
   const [loading, setLoading] = useState(true);
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [obConfig, setObConfig] = useState<ObConfig>({ roadmap_image_url: '', sop_creatives_url: '', sop_campaigns_url: '', calendly_url: '' });
+  const [qOverrides, setQOverrides] = useState<{ id: string; label: string; placeholder: string; active: boolean }[]>([]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingData = useRef<{ form: FormData; checklist: ChecklistData; skip: string[]; files: UploadedFiles } | null>(null);
@@ -518,6 +519,10 @@ function OnboardingContent() {
       }
       if (configRes?.configs?.onboarding) {
         setObConfig((prev) => ({ ...prev, ...configRes.configs.onboarding }));
+      }
+      const qRaw = configRes?.configs?.onboarding_questions?.config;
+      if (qRaw) {
+        try { setQOverrides(JSON.parse(qRaw)); } catch {}
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [clientId]);
@@ -585,6 +590,15 @@ function OnboardingContent() {
 
   const skippedList = [...skipped];
   const clientLabel = clientId ? clientId.split('-').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
+
+  // Merge admin question overrides with hardcoded defaults
+  type AnyQ = (typeof INTAKE_QUESTIONS)[number];
+  const activeQuestions = INTAKE_QUESTIONS.map((q): AnyQ | null => {
+    const ov = qOverrides.find((o) => o.id === q.id);
+    if (ov && !ov.active) return null;
+    if (!ov) return q;
+    return { ...q, label: ov.label || q.label, placeholder: ov.placeholder ?? ('placeholder' in q ? q.placeholder : '') } as unknown as AnyQ;
+  }).filter((q): q is AnyQ => q !== null);
 
   // Dynamic section numbering — only count sections that are visible
   const SECTION_ORDER = ['roadmap', 'contact', 'creative', 'intake', 'brand_assets', 'checklist', 'kickoff'] as const;
@@ -735,7 +749,7 @@ function OnboardingContent() {
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n={sNum('intake')} title="Intake Form" subtitle="Fill out as much detail as possible. Your answers help us build campaigns tailored specifically to your clinic." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {INTAKE_QUESTIONS.map((q) => (
+              {activeQuestions.map((q) => (
                 <QuestionCard
                   key={q.id}
                   q={q}
@@ -832,7 +846,7 @@ function OnboardingContent() {
                 {skippedList.map((id) => {
                   const isChecklist = id.startsWith('checklist_');
                   const qId = isChecklist ? id.replace('checklist_', '') : id;
-                  const q = INTAKE_QUESTIONS.find((x) => x.id === qId);
+                  const q = activeQuestions.find((x) => x.id === qId);
                   const cl = CHECKLIST_ITEMS.find((x) => x.id === qId);
                   const label = q?.label ?? cl?.title ?? id;
                   const section = isChecklist ? 'Access Checklist' : 'Intake Form';

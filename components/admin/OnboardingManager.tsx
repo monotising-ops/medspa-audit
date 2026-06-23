@@ -4,6 +4,184 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import type { OnboardingConfig } from '@/types';
 
+// ─── Default intake questions (mirrors INTAKE_QUESTIONS in onboarding/page.tsx) ──
+
+type QConfig = { id: string; label: string; placeholder: string; active: boolean };
+
+const DEFAULT_QUESTIONS: QConfig[] = [
+  { id: 'q1',  label: "What is your clinic's full name and location?",                                                              placeholder: 'e.g. Mintus Laser Clinic — Toronto, ON',      active: true },
+  { id: 'q2',  label: "What is your clinic's website URL?",                                                                         placeholder: 'https://yoursite.com',                         active: true },
+  { id: 'q3',  label: 'What treatments do you primarily offer? List your top 5–8 with pricing.',                                    placeholder: 'Botox — $12/unit\nDermal Filler — $650/syringe\n...', active: true },
+  { id: 'q4',  label: 'Which single treatment has the highest profit margin for your clinic?',                                       placeholder: 'e.g. Body Contouring',                         active: true },
+  { id: 'q5',  label: 'What is your average ticket per patient visit?',                                                             placeholder: '350',                                          active: true },
+  { id: 'q6',  label: "Who is your ideal patient? Describe them — age, gender, what they're looking for, what concerns they have.", placeholder: 'Women 30–50, professionals, self-conscious about fine lines...', active: true },
+  { id: 'q7',  label: "What makes your clinic different from others in your area? Why should someone choose you?",                  placeholder: 'We specialise in natural-looking results, same-day appointments...', active: true },
+  { id: 'q8',  label: "Are you currently running any ads or have you in the past? If so, what worked and what didn't?",            placeholder: 'Ran Google Ads for 6 months, low quality leads...', active: true },
+  { id: 'q9',  label: 'What is your current monthly marketing budget (including ad spend)?',                                        placeholder: '',                                             active: true },
+  { id: 'q10', label: 'What is your biggest challenge right now when it comes to getting new patients?',                            placeholder: 'Getting consistent leads, not just inquiries...', active: true },
+  { id: 'q11', label: 'How does your team currently handle new inquiries? (DMs, phone, email, booking system)',                     placeholder: 'Front desk calls back within a day...',        active: true },
+  { id: 'q12', label: 'What booking or POS system do you use? (Boulevard, Vagaro, Jane, Mangomint, other)',                        placeholder: 'e.g. Jane App',                               active: true },
+  { id: 'q13', label: "What are your clinic's hours of operation?",                                                                 placeholder: 'Mon–Fri 9am–6pm, Sat 10am–4pm',               active: true },
+  { id: 'q14', label: 'Do you have before/after patient photos with consent that we can use in ads?',                              placeholder: '',                                             active: true },
+  { id: 'q15', label: 'Anything else you want us to know about your clinic, your goals, or your concerns?',                        placeholder: 'Open field — anything goes...',               active: true },
+];
+
+// ─── Questions Panel ──────────────────────────────────────────────────────────
+
+function QuestionsPanel({ token }: { token: string }) {
+  const [questions, setQuestions] = useState<QConfig[]>(DEFAULT_QUESTIONS);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then((r) => r.json())
+      .then(({ configs }) => {
+        const raw = configs?.onboarding_questions?.config;
+        if (raw) {
+          try {
+            const saved: QConfig[] = JSON.parse(raw);
+            // Merge saved into defaults (preserves any new default questions added later)
+            setQuestions(DEFAULT_QUESTIONS.map((dq) => {
+              const s = saved.find((q) => q.id === dq.id);
+              return s ? { ...dq, label: s.label, placeholder: s.placeholder, active: s.active } : dq;
+            }));
+          } catch {}
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true));
+  }, []);
+
+  function update(id: string, patch: Partial<QConfig>) {
+    setQuestions((prev) => prev.map((q) => q.id === id ? { ...q, ...patch } : q));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify([{ section: 'onboarding_questions', key: 'config', value: JSON.stringify(questions) }]),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success('Questions saved');
+    } catch {
+      toast.error('Failed to save questions');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const activeCount = questions.filter((q) => q.active).length;
+
+  const inputBase: React.CSSProperties = {
+    width: '100%', background: '#0a0a0a', border: '1px solid #1e1e1e',
+    borderRadius: '6px', color: '#f5f5f5', fontSize: '13px', outline: 'none',
+    fontFamily: 'inherit', padding: '8px 10px',
+  };
+
+  return (
+    <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#525252', margin: 0 }}>
+            Intake Form Questions
+          </p>
+          <p style={{ fontSize: '11px', color: '#444', margin: '4px 0 0' }}>
+            {activeCount} of {questions.length} active · edits apply to all new forms
+          </p>
+        </div>
+        <button
+          onClick={save}
+          disabled={saving || !loaded}
+          style={{
+            padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 600,
+            background: saving ? '#1a1a1a' : '#3b82f6', color: saving ? '#525252' : '#fff',
+            cursor: saving ? 'not-allowed' : 'pointer',
+          }}
+        >
+          {saving ? 'Saving…' : 'Save Questions'}
+        </button>
+      </div>
+
+      {!loaded ? (
+        <p style={{ color: '#444', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Loading…</p>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {questions.map((q, i) => (
+            <div
+              key={q.id}
+              style={{
+                background: '#111', border: `1px solid ${q.active ? '#1e1e1e' : 'rgba(239,68,68,0.15)'}`,
+                borderRadius: '10px', padding: '14px 16px',
+                opacity: q.active ? 1 : 0.55, transition: 'opacity 0.2s, border-color 0.2s',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                {/* Question number badge */}
+                <span style={{
+                  fontSize: '10px', fontWeight: 700, color: q.active ? '#D4A853' : '#555',
+                  background: q.active ? 'rgba(212,168,83,0.1)' : '#1a1a1a',
+                  border: `1px solid ${q.active ? 'rgba(212,168,83,0.25)' : '#2a2a2a'}`,
+                  borderRadius: '5px', padding: '2px 7px', flexShrink: 0,
+                }}>
+                  Q{i + 1}
+                </span>
+                <div style={{ flex: 1 }} />
+                {/* Active toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', color: q.active ? '#a1a1aa' : '#ef4444', fontWeight: 500 }}>
+                    {q.active ? 'Included' : 'Removed'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => update(q.id, { active: !q.active })}
+                    style={{
+                      width: '40px', height: '22px', borderRadius: '11px', border: 'none',
+                      background: q.active ? '#22c55e' : '#2a2a2a',
+                      position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0,
+                    }}
+                  >
+                    <span style={{
+                      position: 'absolute', top: '3px', left: q.active ? '21px' : '3px',
+                      width: '16px', height: '16px', borderRadius: '50%', background: '#fff',
+                      transition: 'left 0.2s', display: 'block',
+                    }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Label */}
+              <div style={{ marginBottom: '8px' }}>
+                <label style={{ fontSize: '11px', color: '#525252', display: 'block', marginBottom: '4px' }}>Question text</label>
+                <textarea
+                  value={q.label}
+                  onChange={(e) => update(q.id, { label: e.target.value })}
+                  rows={2}
+                  style={{ ...inputBase, resize: 'vertical', minHeight: '52px' }}
+                />
+              </div>
+
+              {/* Placeholder */}
+              <div>
+                <label style={{ fontSize: '11px', color: '#525252', display: 'block', marginBottom: '4px' }}>Placeholder / hint text</label>
+                <input
+                  type="text"
+                  value={q.placeholder}
+                  onChange={(e) => update(q.id, { placeholder: e.target.value })}
+                  style={inputBase}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Section definitions ──────────────────────────────────────────────────────
 
 const ONBOARDING_SECTIONS = [
@@ -538,6 +716,9 @@ export default function OnboardingManager({ token, config, onSaveConfig, onUploa
 
       {/* Global settings */}
       <SettingsPanel config={config} onSaveConfig={onSaveConfig} onUpload={onUpload} />
+
+      {/* Intake question editor */}
+      <QuestionsPanel token={token} />
 
       {/* Create new client */}
       <div>
