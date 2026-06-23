@@ -9,6 +9,7 @@ import LeadsTable from '@/components/admin/LeadsTable';
 import SettingsPanel from '@/components/admin/SettingsPanel';
 import InfoBank from '@/components/admin/InfoBank';
 import VSLEditor from '@/components/admin/VSLEditor';
+import OnboardingManager from '@/components/admin/OnboardingManager';
 import type {
   Question,
   Lead,
@@ -23,7 +24,7 @@ import type {
   VSLConfig,
 } from '@/types';
 
-type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings' | 'vsl';
+type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings' | 'vsl' | 'onboarding';
 
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('');
@@ -84,6 +85,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'infobank', label: 'Info Bank' },
   { id: 'leads', label: 'Leads' },
   { id: 'vsl', label: 'VSL Page' },
+  { id: 'onboarding', label: 'Onboarding' },
   { id: 'settings', label: 'Settings' },
 ];
 
@@ -374,6 +376,9 @@ export default function AdminPage() {
               setVslConfig(c);
             }}
           />
+        )}
+        {tab === 'onboarding' && (
+          <OnboardingManager token={token ?? ''} />
         )}
         {tab === 'settings' && (
           <SettingsPanel
