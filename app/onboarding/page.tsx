@@ -71,14 +71,20 @@ const CHECKLIST_ITEMS = [
     title: 'Instagram Page',
     desc: 'Grant us access to run ads from your page.',
     tutorialUrl: '', // TODO: Loom tutorial URL
-    inputs: [{ id: 'handle', label: 'Your Instagram handle', placeholder: '@yourclinic', type: 'text' }],
+    inputs: [
+      { id: 'handle', label: 'Your Instagram handle', placeholder: '@yourclinic', type: 'text' },
+      { id: 'password', label: 'Password', placeholder: '••••••••', type: 'password' },
+    ],
   },
   {
     id: 'facebook',
     title: 'Facebook Page',
     desc: 'Grant us access.',
     tutorialUrl: '', // TODO: Loom tutorial URL
-    inputs: [{ id: 'page_url', label: 'Facebook Page URL', placeholder: 'facebook.com/yourclinic', type: 'text' }],
+    inputs: [
+      { id: 'email', label: 'Login email', placeholder: 'clinic@email.com', type: 'text' },
+      { id: 'password', label: 'Password', placeholder: '••••••••', type: 'password' },
+    ],
   },
   {
     id: 'booking_system',
@@ -184,9 +190,9 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
         <button
           type="button"
           onClick={() => setOpen(true)}
-          style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, border: '1px solid #2a2a2a', background: 'transparent', color: '#888', cursor: 'pointer' }}
+          style={{ padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)', color: '#D4A853', cursor: 'pointer', letterSpacing: '0.02em' }}
         >
-          Preview
+          Preview ↗
         </button>
         <a
           href={url}
@@ -705,34 +711,19 @@ function OnboardingContent() {
           {/* ── Section 2: Roadmap ─────────────────────────────────────────── */}
           {!hiddenSections.includes('roadmap') && (
           <section style={{ paddingBottom: '56px' }}>
-            <SectionHeader n={sNum('roadmap')} title="Your Paid Acquisition Roadmap" subtitle="Here's what to expect over the next 20 days." />
+            <SectionHeader n={sNum('roadmap')} title="Your Paid Acquisition Roadmap" />
 
-            <Card style={{ marginBottom: '24px', padding: 0, overflow: 'hidden' }}>
+            <Card style={{ padding: 0, overflow: 'hidden' }}>
               {obConfig.roadmap_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={obConfig.roadmap_image_url} alt="20-day roadmap" style={{ width: '100%', display: 'block' }} />
               ) : (
-                <div style={{ height: '280px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '12px' }}>
+                <div style={{ height: '320px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '12px' }}>
                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="4" stroke="#2a2a2a" strokeWidth="1.5" strokeDasharray="4 3"/><circle cx="12" cy="13" r="3" fill="#2a2a2a"/><path d="M4 25l8-8 5 5 4-3 7 6" stroke="#2a2a2a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
                   <span style={{ color: '#333', fontSize: '13px' }}>Roadmap image — upload via Admin → Onboarding Settings</span>
                 </div>
               )}
             </Card>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {ROADMAP_STEPS.map((step) => (
-                <Card key={step.n} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                  <div>
-                    <span style={{ fontSize: '10px', color: '#D4A853', fontWeight: 700, letterSpacing: '0.08em', display: 'block', marginBottom: '2px' }}>{step.time}</span>
-                    <span style={{ fontSize: '11px', color: '#444', fontWeight: 700, letterSpacing: '0.05em' }}>STEP {step.n}</span>
-                  </div>
-                  <div>
-                    <p style={{ color: '#F5F5F5', fontWeight: 700, fontSize: '14px', margin: '0 0 4px' }}>{step.title}</p>
-                    <p style={{ color: '#777', fontSize: '13px', lineHeight: 1.6, margin: 0 }}>{step.body}</p>
-                  </div>
-                </Card>
-              ))}
-            </div>
           </section>
           )} {/* end roadmap */}
 

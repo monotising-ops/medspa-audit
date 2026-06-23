@@ -679,7 +679,10 @@ function SettingsPanel({
 
       {/* Roadmap image */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 500 }}>Roadmap Image</label>
+        <div>
+          <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 500 }}>Roadmap Image</label>
+          <p style={{ fontSize: '11px', color: '#444', margin: '3px 0 0' }}>Displayed full-width on client page. Recommended: 1400 × 900 px or wider, PNG/JPG.</p>
+        </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <input
             type="text"
@@ -705,9 +708,13 @@ function SettingsPanel({
             {saving === 'roadmap_image_url' ? 'Saving…' : 'Save'}
           </button>
         </div>
-        {local.roadmap_image_url && (
+        {local.roadmap_image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={local.roadmap_image_url} alt="Roadmap preview" style={{ maxHeight: '120px', objectFit: 'contain', borderRadius: '8px', border: '1px solid #1a1a1a', alignSelf: 'flex-start' }} />
+          <img src={local.roadmap_image_url} alt="Roadmap preview" style={{ width: '100%', maxWidth: '680px', objectFit: 'contain', borderRadius: '10px', border: '1px solid #1a1a1a' }} />
+        ) : (
+          <div style={{ width: '100%', maxWidth: '680px', height: '200px', background: '#0a0a0a', border: '1px dashed #1e1e1e', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ color: '#333', fontSize: '12px' }}>No image uploaded yet</span>
+          </div>
         )}
       </div>
 
