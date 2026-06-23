@@ -182,6 +182,204 @@ function QuestionsPanel({ token }: { token: string }) {
   );
 }
 
+// ─── Brand Assets + Checklist defaults ───────────────────────────────────────
+
+type AssetConfig = { id: string; label: string; hint: string; active: boolean };
+type ChecklistItemConfig = { id: string; title: string; desc: string; active: boolean };
+
+const DEFAULT_ASSETS: AssetConfig[] = [
+  { id: 'logos',               label: 'Clinic logo',                      hint: 'PNG with transparent background preferred',                            active: true },
+  { id: 'clinic-photos',       label: 'Clinic photos',                    hint: 'Interior, treatment rooms, staff — anything that shows the vibe',      active: true },
+  { id: 'before-after',        label: 'Before/after patient photos',      hint: 'With patient consent',                                                  active: true },
+  { id: 'marketing-materials', label: 'Existing marketing materials',     hint: 'Flyers, previous ad creatives, brand guides',                           active: true },
+];
+
+const DEFAULT_CHECKLIST: ChecklistItemConfig[] = [
+  { id: 'meta_ads',       title: 'Meta Ads Manager',       desc: 'Grant us Advertiser access to your ad account.',  active: true },
+  { id: 'biz_manager',   title: 'Meta Business Manager',  desc: 'Add us as a partner.',                            active: true },
+  { id: 'instagram',     title: 'Instagram Page',          desc: 'Grant us access to run ads from your page.',      active: true },
+  { id: 'facebook',      title: 'Facebook Page',           desc: 'Grant us access.',                                active: true },
+  { id: 'booking_system',title: 'Booking System',          desc: 'Share login so we can verify booking flow.',      active: true },
+];
+
+// ─── Shared sub-panel helpers ─────────────────────────────────────────────────
+
+function PanelShell({ title, activeCount, total, onSave, saving, loaded, children }: {
+  title: string; activeCount: number; total: number;
+  onSave: () => void; saving: boolean; loaded: boolean;
+  children: React.ReactNode;
+}) {
+  const inputBase: React.CSSProperties = {
+    width: '100%', background: '#0a0a0a', border: '1px solid #1e1e1e',
+    borderRadius: '6px', color: '#f5f5f5', fontSize: '13px', outline: 'none',
+    fontFamily: 'inherit', padding: '8px 10px',
+  };
+  return (
+    <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
+          <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#525252', margin: 0 }}>{title}</p>
+          <p style={{ fontSize: '11px', color: '#444', margin: '4px 0 0' }}>{activeCount} of {total} active · edits apply to all new forms</p>
+        </div>
+        <button
+          onClick={onSave}
+          disabled={saving || !loaded}
+          style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', fontSize: '13px', fontWeight: 600, background: saving ? '#1a1a1a' : '#3b82f6', color: saving ? '#525252' : '#fff', cursor: saving ? 'not-allowed' : 'pointer' }}
+        >
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+      {!loaded ? <p style={{ color: '#444', fontSize: '13px', textAlign: 'center', padding: '20px 0' }}>Loading…</p> : children}
+    </div>
+  );
+}
+
+// Re-export inputBase style for child panels
+function itemInputStyle(): React.CSSProperties {
+  return { width: '100%', background: '#0a0a0a', border: '1px solid #1e1e1e', borderRadius: '6px', color: '#f5f5f5', fontSize: '13px', outline: 'none', fontFamily: 'inherit', padding: '8px 10px' };
+}
+
+function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <span style={{ fontSize: '11px', color: on ? '#a1a1aa' : '#ef4444', fontWeight: 500 }}>{on ? 'Included' : 'Removed'}</span>
+      <button
+        type="button"
+        onClick={onToggle}
+        style={{ width: '40px', height: '22px', borderRadius: '11px', border: 'none', background: on ? '#22c55e' : '#2a2a2a', position: 'relative', cursor: 'pointer', transition: 'background 0.2s', flexShrink: 0 }}
+      >
+        <span style={{ position: 'absolute', top: '3px', left: on ? '21px' : '3px', width: '16px', height: '16px', borderRadius: '50%', background: '#fff', transition: 'left 0.2s', display: 'block' }} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Brand Assets Panel ───────────────────────────────────────────────────────
+
+function BrandAssetsPanel({ token }: { token: string }) {
+  const [items, setItems] = useState<AssetConfig[]>(DEFAULT_ASSETS);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/config').then(r => r.json()).then(({ configs }) => {
+      const raw = configs?.onboarding_assets?.config;
+      if (raw) {
+        try {
+          const saved: AssetConfig[] = JSON.parse(raw);
+          setItems(DEFAULT_ASSETS.map(d => { const s = saved.find(x => x.id === d.id); return s ? { ...d, ...s } : d; }));
+        } catch {}
+      }
+    }).catch(() => {}).finally(() => setLoaded(true));
+  }, []);
+
+  function update(id: string, patch: Partial<AssetConfig>) {
+    setItems(prev => prev.map(x => x.id === id ? { ...x, ...patch } : x));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify([{ section: 'onboarding_assets', key: 'config', value: JSON.stringify(items) }]),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success('Brand assets saved');
+    } catch { toast.error('Failed to save'); }
+    finally { setSaving(false); }
+  }
+
+  const is = itemInputStyle();
+  return (
+    <PanelShell title="Brand Asset Uploads" activeCount={items.filter(x => x.active).length} total={items.length} onSave={save} saving={saving} loaded={loaded}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {items.map(item => (
+          <div key={item.id} style={{ background: '#111', border: `1px solid ${item.active ? '#1e1e1e' : 'rgba(239,68,68,0.15)'}`, borderRadius: '10px', padding: '14px 16px', opacity: item.active ? 1 : 0.55, transition: 'opacity 0.2s' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+              <Toggle on={item.active} onToggle={() => update(item.id, { active: !item.active })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: '#525252', display: 'block', marginBottom: '4px' }}>Upload label</label>
+                <input type="text" value={item.label} onChange={e => update(item.id, { label: e.target.value })} style={is} />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: '#525252', display: 'block', marginBottom: '4px' }}>Hint text</label>
+                <input type="text" value={item.hint} onChange={e => update(item.id, { hint: e.target.value })} style={is} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </PanelShell>
+  );
+}
+
+// ─── Checklist Panel ──────────────────────────────────────────────────────────
+
+function ChecklistPanel({ token }: { token: string }) {
+  const [items, setItems] = useState<ChecklistItemConfig[]>(DEFAULT_CHECKLIST);
+  const [saving, setSaving] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/config').then(r => r.json()).then(({ configs }) => {
+      const raw = configs?.onboarding_checklist?.config;
+      if (raw) {
+        try {
+          const saved: ChecklistItemConfig[] = JSON.parse(raw);
+          setItems(DEFAULT_CHECKLIST.map(d => { const s = saved.find(x => x.id === d.id); return s ? { ...d, ...s } : d; }));
+        } catch {}
+      }
+    }).catch(() => {}).finally(() => setLoaded(true));
+  }, []);
+
+  function update(id: string, patch: Partial<ChecklistItemConfig>) {
+    setItems(prev => prev.map(x => x.id === id ? { ...x, ...patch } : x));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      const res = await fetch('/api/admin/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
+        body: JSON.stringify([{ section: 'onboarding_checklist', key: 'config', value: JSON.stringify(items) }]),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success('Checklist saved');
+    } catch { toast.error('Failed to save'); }
+    finally { setSaving(false); }
+  }
+
+  const is = itemInputStyle();
+  return (
+    <PanelShell title="Access Checklist Items" activeCount={items.filter(x => x.active).length} total={items.length} onSave={save} saving={saving} loaded={loaded}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {items.map(item => (
+          <div key={item.id} style={{ background: '#111', border: `1px solid ${item.active ? '#1e1e1e' : 'rgba(239,68,68,0.15)'}`, borderRadius: '10px', padding: '14px 16px', opacity: item.active ? 1 : 0.55, transition: 'opacity 0.2s' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+              <Toggle on={item.active} onToggle={() => update(item.id, { active: !item.active })} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: '#525252', display: 'block', marginBottom: '4px' }}>Title</label>
+                <input type="text" value={item.title} onChange={e => update(item.id, { title: e.target.value })} style={is} />
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: '#525252', display: 'block', marginBottom: '4px' }}>Description</label>
+                <input type="text" value={item.desc} onChange={e => update(item.id, { desc: e.target.value })} style={is} />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </PanelShell>
+  );
+}
+
 // ─── Section definitions ──────────────────────────────────────────────────────
 
 const ONBOARDING_SECTIONS = [
@@ -719,6 +917,12 @@ export default function OnboardingManager({ token, config, onSaveConfig, onUploa
 
       {/* Intake question editor */}
       <QuestionsPanel token={token} />
+
+      {/* Brand asset upload config */}
+      <BrandAssetsPanel token={token} />
+
+      {/* Access checklist config */}
+      <ChecklistPanel token={token} />
 
       {/* Create new client */}
       <div>

@@ -499,6 +499,8 @@ function OnboardingContent() {
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
   const [obConfig, setObConfig] = useState<ObConfig>({ roadmap_image_url: '', sop_creatives_url: '', sop_campaigns_url: '', calendly_url: '' });
   const [qOverrides, setQOverrides] = useState<{ id: string; label: string; placeholder: string; active: boolean }[]>([]);
+  const [assetOverrides, setAssetOverrides] = useState<{ id: string; label: string; hint: string; active: boolean }[]>([]);
+  const [checklistOverrides, setChecklistOverrides] = useState<{ id: string; title: string; desc: string; active: boolean }[]>([]);
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingData = useRef<{ form: FormData; checklist: ChecklistData; skip: string[]; files: UploadedFiles } | null>(null);
@@ -526,6 +528,14 @@ function OnboardingContent() {
       const qRaw = configRes?.configs?.onboarding_questions?.config;
       if (qRaw) {
         try { setQOverrides(JSON.parse(qRaw)); } catch {}
+      }
+      const aRaw = configRes?.configs?.onboarding_assets?.config;
+      if (aRaw) {
+        try { setAssetOverrides(JSON.parse(aRaw)); } catch {}
+      }
+      const clRaw = configRes?.configs?.onboarding_checklist?.config;
+      if (clRaw) {
+        try { setChecklistOverrides(JSON.parse(clRaw)); } catch {}
       }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [clientId]);
@@ -602,6 +612,22 @@ function OnboardingContent() {
     if (!ov) return q;
     return { ...q, label: ov.label || q.label, placeholder: ov.placeholder ?? ('placeholder' in q ? q.placeholder : '') } as unknown as AnyQ;
   }).filter((q): q is AnyQ => q !== null);
+
+  // Apply brand-asset overrides from admin
+  const activeAssets = UPLOAD_FIELDS.map((f) => {
+    const ov = assetOverrides.find((o) => o.id === f.id);
+    if (ov && !ov.active) return null;
+    if (!ov) return f;
+    return { ...f, label: ov.label || f.label, hint: ov.hint || f.hint };
+  }).filter((f): f is typeof UPLOAD_FIELDS[number] => f !== null);
+
+  // Apply checklist overrides from admin
+  const activeChecklist = CHECKLIST_ITEMS.map((item) => {
+    const ov = checklistOverrides.find((o) => o.id === item.id);
+    if (ov && !ov.active) return null;
+    if (!ov) return item;
+    return { ...item, title: ov.title || item.title, desc: ov.desc || item.desc };
+  }).filter((item): item is typeof CHECKLIST_ITEMS[number] => item !== null);
 
   // Dynamic section numbering — only count sections that are visible
   const SECTION_ORDER = ['roadmap', 'contact', 'creative', 'intake', 'brand_assets', 'checklist', 'kickoff'] as const;
@@ -772,7 +798,7 @@ function OnboardingContent() {
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n={sNum('brand_assets')} title="Brand Assets" subtitle="Upload your brand files so we can match your clinic's look and feel in the ad creatives." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {UPLOAD_FIELDS.map((field) => {
+              {activeAssets.map((field) => {
                 const skipId = `upload_${field.id}`;
                 return (
                   <Card key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -809,7 +835,7 @@ function OnboardingContent() {
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n={sNum('checklist')} title="Access Checklist" subtitle="We need access to a few things to get started. Each item has a tutorial if you're not sure how." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {CHECKLIST_ITEMS.map((item) => (
+              {activeChecklist.map((item) => (
                 <ChecklistCard
                   key={item.id}
                   item={item}
