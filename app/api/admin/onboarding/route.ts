@@ -6,18 +6,22 @@ export async function GET(request: NextRequest) {
   const authErr = await requireAdmin(request);
   if (authErr) return authErr;
   const db = getAdminClient();
-  // Use select('*') so this works whether or not hidden_sections column exists yet.
-  // Strip the heavy JSONB blobs (form_data, checklist_data, uploaded_files) before returning.
-  const { data, error } = await db
-    .from('client_onboarding')
-    .select('*')
-    .order('updated_at', { ascending: false });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
-  const summary = (data ?? []).map(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ({ form_data, checklist_data, uploaded_files, ...rest }: Record<string, unknown>) => rest
-  );
-  return Response.json(summary);
+  const [clientsRes, sectionsRes] = await Promise.all([
+    db.from('client_onboarding')
+      .select('client_id, client_name, completion_percentage, skipped_questions, created_at, updated_at')
+      .order('updated_at', { ascending: false }),
+    db.from('site_configs').select('key, value').eq('section', 'client_sections'),
+  ]);
+  if (clientsRes.error) return Response.json({ error: clientsRes.error.message }, { status: 500 });
+  const hiddenMap: Record<string, string[]> = {};
+  for (const row of sectionsRes.data ?? []) {
+    try { hiddenMap[row.key] = JSON.parse(row.value); } catch {}
+  }
+  const records = (clientsRes.data ?? []).map((r) => ({
+    ...r,
+    hidden_sections: hiddenMap[r.client_id] ?? [],
+  }));
+  return Response.json(records);
 }
 
 export async function POST(request: NextRequest) {
@@ -49,10 +53,13 @@ export async function PATCH(request: NextRequest) {
   const { client_id, hidden_sections } = await request.json();
   if (!client_id) return Response.json({ error: 'client_id required' }, { status: 400 });
   const db = getAdminClient();
+  // Store hidden_sections in site_configs so no migration is required
   const { error } = await db
-    .from('client_onboarding')
-    .update({ hidden_sections: hidden_sections ?? [] })
-    .eq('client_id', client_id);
+    .from('site_configs')
+    .upsert(
+      { section: 'client_sections', key: client_id, value: JSON.stringify(hidden_sections ?? []) },
+      { onConflict: 'section,key' }
+    );
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json({ ok: true });
 }

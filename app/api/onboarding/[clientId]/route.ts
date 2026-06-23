@@ -26,12 +26,16 @@ export async function GET(
 ) {
   const { clientId } = await params;
   const db = getAdminClient();
-  const { data, error } = await db
-    .from('client_onboarding')
-    .select('*')
-    .eq('client_id', clientId)
-    .maybeSingle();
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  const [clientRes, sectionsRes] = await Promise.all([
+    db.from('client_onboarding').select('*').eq('client_id', clientId).maybeSingle(),
+    db.from('site_configs').select('value').eq('section', 'client_sections').eq('key', clientId).maybeSingle(),
+  ]);
+  if (clientRes.error) return Response.json({ error: clientRes.error.message }, { status: 500 });
+  let hidden_sections: string[] = [];
+  if (sectionsRes.data?.value) {
+    try { hidden_sections = JSON.parse(sectionsRes.data.value); } catch {}
+  }
+  const data = clientRes.data ? { ...clientRes.data, hidden_sections } : null;
   return Response.json({ data });
 }
 

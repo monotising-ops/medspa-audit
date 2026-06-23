@@ -63,13 +63,7 @@ function ManageSectionsModal({
       onUpdate(record.client_id, next);
     } catch (err: unknown) {
       setHidden(hidden); // revert
-      const msg = err instanceof Error ? err.message : 'Failed to save';
-      const needsMigration = msg.includes('hidden_sections') || msg.includes('does not exist');
-      toast.error(needsMigration
-        ? 'Run SQL migration first: ALTER TABLE client_onboarding ADD COLUMN IF NOT EXISTS hidden_sections TEXT[] DEFAULT \'{}\';'
-        : msg,
-        { duration: 8000 }
-      );
+      toast.error(err instanceof Error ? err.message : 'Failed to save');
     } finally {
       setSaving(null);
     }
