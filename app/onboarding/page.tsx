@@ -11,13 +11,14 @@
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Types ─────────────────────────────────────────────────────────────────────
+// (defined early so OnboardingContent can use them)
 
-const CALENDLY_URL = ''; // TODO: paste your Calendly URL here
-const ROADMAP_IMAGE_URL = ''; // TODO: upload roadmap image and paste URL here
-const SOP_LINKS = {
-  creatives: '', // TODO: link to "How We Create High-Converting Static Creatives for Med Spas"
-  campaigns: '', // TODO: link to "How We Structure Meta Ad Campaigns for Med Spas"
+type ObConfig = {
+  roadmap_image_url: string;
+  sop_creatives_url: string;
+  sop_campaigns_url: string;
+  calendly_url: string;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -100,7 +101,7 @@ const UPLOAD_FIELDS = [
   { id: 'marketing-materials', label: 'Existing marketing materials', hint: 'Flyers, previous ad creatives, brand guides', accept: 'image/*,.pdf', max: 10 },
 ];
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── More types ───────────────────────────────────────────────────────────────
 
 type FormData = Record<string, string>;
 type ChecklistData = Record<string, { checked: boolean; inputs: Record<string, string> }>;
@@ -165,6 +166,60 @@ function SkipBtn({ active, onClick }: { active: boolean; onClick: () => void }) 
     >
       {active ? '↩ Come back' : 'Skip for now'}
     </button>
+  );
+}
+
+function DocPreviewButton({ url, label }: { url: string; label: string }) {
+  const [open, setOpen] = useState(false);
+  if (!url) {
+    return <span style={{ color: '#444', fontSize: '13px' }}>→ {label} <span style={{ color: '#3a3a3a' }}>(coming soon)</span></span>;
+  }
+  return (
+    <>
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+        <span style={{ color: '#D4A853', fontSize: '13px', fontWeight: 600 }}>→ {label}</span>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, border: '1px solid #2a2a2a', background: 'transparent', color: '#888', cursor: 'pointer' }}
+        >
+          Preview
+        </button>
+        <a
+          href={url}
+          download
+          style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, border: '1px solid rgba(212,168,83,0.3)', background: 'transparent', color: '#D4A853', textDecoration: 'none' }}
+        >
+          Download ↓
+        </a>
+      </div>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.93)', display: 'flex', flexDirection: 'column' }}
+        >
+          <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
+            <span style={{ color: '#AAAAAA', fontSize: '13px', fontWeight: 600 }}>{label}</span>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <a href={url} download style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '2px 6px' }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          <iframe
+            src={url}
+            style={{ flex: 1, width: '100%', border: 'none', background: '#fff' }}
+            title={label}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -438,27 +493,33 @@ function OnboardingContent() {
   const [completionPct, setCompletionPct] = useState(0);
   const [isReturning, setIsReturning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hiddenSections, setHiddenSections] = useState<string[]>([]);
+  const [obConfig, setObConfig] = useState<ObConfig>({ roadmap_image_url: '', sop_creatives_url: '', sop_campaigns_url: '', calendly_url: '' });
 
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingData = useRef<{ form: FormData; checklist: ChecklistData; skip: string[]; files: UploadedFiles } | null>(null);
 
-  // Load existing data on mount
+  // Load existing data and global config on mount
   useEffect(() => {
     if (!clientId) { setLoading(false); return; }
-    fetch(`/api/onboarding/${clientId}`)
-      .then((r) => r.json())
-      .then(({ data }) => {
-        if (data) {
-          setIsReturning(true);
-          setFormData(data.form_data ?? {});
-          setChecklistData(data.checklist_data ?? {});
-          setSkipped(new Set(data.skipped_questions ?? []));
-          setUploadedFiles(data.uploaded_files ?? {});
-          setCompletionPct(data.completion_percentage ?? 0);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/onboarding/${clientId}`).then((r) => r.json()),
+      fetch('/api/config').then((r) => r.json()).catch(() => ({ configs: {} })),
+    ]).then(([clientRes, configRes]) => {
+      const { data } = clientRes;
+      if (data) {
+        setIsReturning(true);
+        setFormData(data.form_data ?? {});
+        setChecklistData(data.checklist_data ?? {});
+        setSkipped(new Set(data.skipped_questions ?? []));
+        setUploadedFiles(data.uploaded_files ?? {});
+        setCompletionPct(data.completion_percentage ?? 0);
+        setHiddenSections(data.hidden_sections ?? []);
+      }
+      if (configRes?.configs?.onboarding) {
+        setObConfig((prev) => ({ ...prev, ...configRes.configs.onboarding }));
+      }
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [clientId]);
 
   const triggerSave = useCallback((form: FormData, checklist: ChecklistData, skip: Set<string>, files: UploadedFiles) => {
@@ -591,18 +652,18 @@ function OnboardingContent() {
           </section>
 
           {/* ── Section 2: Roadmap ─────────────────────────────────────────── */}
+          {!hiddenSections.includes('roadmap') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="01" title="Your Paid Acquisition Roadmap" subtitle="Here's what to expect over the next 20 days." />
 
             <Card style={{ marginBottom: '24px', padding: 0, overflow: 'hidden' }}>
-              {ROADMAP_IMAGE_URL ? (
+              {obConfig.roadmap_image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={ROADMAP_IMAGE_URL} alt="20-day roadmap" style={{ width: '100%', display: 'block' }} />
+                <img src={obConfig.roadmap_image_url} alt="20-day roadmap" style={{ width: '100%', display: 'block' }} />
               ) : (
                 <div style={{ height: '280px', background: '#0d0d0d', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', borderRadius: '12px' }}>
-                  {/* TODO: Upload roadmap image and set ROADMAP_IMAGE_URL */}
                   <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><rect x="3" y="3" width="26" height="26" rx="4" stroke="#2a2a2a" strokeWidth="1.5" strokeDasharray="4 3"/><circle cx="12" cy="13" r="3" fill="#2a2a2a"/><path d="M4 25l8-8 5 5 4-3 7 6" stroke="#2a2a2a" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  <span style={{ color: '#333', fontSize: '13px' }}>Roadmap image — upload via ROADMAP_IMAGE_URL config</span>
+                  <span style={{ color: '#333', fontSize: '13px' }}>Roadmap image — upload via Admin → Onboarding Settings</span>
                 </div>
               )}
             </Card>
@@ -622,8 +683,10 @@ function OnboardingContent() {
               ))}
             </div>
           </section>
+          )} {/* end roadmap */}
 
           {/* ── Section 3: Contact ─────────────────────────────────────────── */}
+          {!hiddenSections.includes('contact') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="02" title="Your Direct Line to Me" />
             <Card style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -640,35 +703,27 @@ function OnboardingContent() {
               </p>
             </Card>
           </section>
+          )} {/* end contact */}
 
           {/* ── Section 4: Creative Concept ────────────────────────────────── */}
+          {!hiddenSections.includes('creative') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="03" title="Creative Direction" />
             <Card style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <p style={{ color: '#AAAAAA', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
                 We will share a demo of 3 ads to get an idea of your brand's styling. These are starting points — they'll evolve based on performance data.
               </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {SOP_LINKS.creatives ? (
-                  <a href={SOP_LINKS.creatives} target="_blank" rel="noopener noreferrer" style={{ color: '#D4A853', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>
-                    → How We Create High-Converting Static Creatives for Med Spas
-                  </a>
-                ) : (
-                  <span style={{ color: '#444', fontSize: '13px' }}>→ How We Create High-Converting Static Creatives {/* TODO: add SOP_LINKS.creatives */}</span>
-                )}
-                {SOP_LINKS.campaigns ? (
-                  <a href={SOP_LINKS.campaigns} target="_blank" rel="noopener noreferrer" style={{ color: '#D4A853', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>
-                    → How We Structure Meta Ad Campaigns for Med Spas
-                  </a>
-                ) : (
-                  <span style={{ color: '#444', fontSize: '13px' }}>→ How We Structure Meta Ad Campaigns {/* TODO: add SOP_LINKS.campaigns */}</span>
-                )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <DocPreviewButton url={obConfig.sop_creatives_url} label="How We Create High-Converting Static Creatives for Med Spas" />
+                <DocPreviewButton url={obConfig.sop_campaigns_url} label="How We Structure Meta Ad Campaigns for Med Spas" />
               </div>
               <p style={{ color: '#555', fontSize: '12px', margin: 0, fontStyle: 'italic' }}>These guides are optional reading — they give you a deeper look at our process if you're curious.</p>
             </Card>
           </section>
+          )} {/* end creative */}
 
           {/* ── Section 5: Intake Form ─────────────────────────────────────── */}
+          {!hiddenSections.includes('intake') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="04" title="Intake Form" subtitle="Fill out as much detail as possible. Your answers help us build campaigns tailored specifically to your clinic." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -685,30 +740,47 @@ function OnboardingContent() {
               ))}
             </div>
           </section>
+          )} {/* end intake */}
 
           {/* ── Section 6: Brand Assets ────────────────────────────────────── */}
+          {!hiddenSections.includes('brand_assets') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="05" title="Brand Assets" subtitle="Upload your brand files so we can match your clinic's look and feel in the ad creatives." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {UPLOAD_FIELDS.map((field) => (
-                <Card key={field.id}>
-                  <FileUploadZone
-                    fieldId={field.id}
-                    label={field.label}
-                    hint={field.hint}
-                    accept={field.accept}
-                    max={field.max}
-                    clientId={clientId}
-                    files={uploadedFiles[field.id] ?? []}
-                    onUploaded={(f) => addFile(field.id, f)}
-                    onRemove={(path) => removeFile(field.id, path)}
-                  />
-                </Card>
-              ))}
+              {UPLOAD_FIELDS.map((field) => {
+                const skipId = `upload_${field.id}`;
+                return (
+                  <Card key={field.id} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                      <div style={{ flex: 1 }}>
+                        <FileUploadZone
+                          fieldId={field.id}
+                          label={field.label}
+                          hint={field.hint}
+                          accept={field.accept}
+                          max={field.max}
+                          clientId={clientId}
+                          files={uploadedFiles[field.id] ?? []}
+                          onUploaded={(f) => addFile(field.id, f)}
+                          onRemove={(path) => removeFile(field.id, path)}
+                        />
+                      </div>
+                      <SkipBtn active={skipped.has(skipId)} onClick={() => toggleSkip(skipId)} />
+                    </div>
+                    {skipped.has(skipId) && (
+                      <div style={{ fontSize: '11px', color: '#D4A853', background: 'rgba(212,168,83,0.08)', border: '1px solid rgba(212,168,83,0.2)', borderRadius: '6px', padding: '6px 10px' }}>
+                        Marked "come back to this" — upload when ready
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
             </div>
           </section>
+          )} {/* end brand_assets */}
 
           {/* ── Section 7: Access Checklist ────────────────────────────────── */}
+          {!hiddenSections.includes('checklist') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="06" title="Access Checklist" subtitle="We need access to a few things to get started. Each item has a tutorial if you're not sure how." />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -724,24 +796,25 @@ function OnboardingContent() {
               ))}
             </div>
           </section>
+          )} {/* end checklist */}
 
           {/* ── Section 8: Kickoff Call ────────────────────────────────────── */}
+          {!hiddenSections.includes('kickoff') && (
           <section style={{ paddingBottom: '56px' }}>
             <SectionHeader n="07" title="Book Your Kickoff Call" subtitle="Once you've completed the intake form and access checklist, book our kickoff call below." />
-            {CALENDLY_URL ? (
-              // TODO: Replace with proper Calendly inline embed widget
+            {obConfig.calendly_url ? (
               <div style={{ background: '#141414', border: '1px solid #1e1e1e', borderRadius: '12px', overflow: 'hidden', minHeight: '600px' }}>
-                <iframe src={CALENDLY_URL} width="100%" height="600" frameBorder="0" title="Book a call" />
+                <iframe src={obConfig.calendly_url} width="100%" height="600" frameBorder="0" title="Book a call" />
               </div>
             ) : (
               <Card style={{ textAlign: 'center', padding: '48px 24px' }}>
-                {/* TODO: paste Calendly URL into CALENDLY_URL constant at top of file */}
                 <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style={{ margin: '0 auto 12px', display: 'block' }}><rect x="5" y="9" width="26" height="22" rx="4" stroke="#2a2a2a" strokeWidth="1.5"/><path d="M5 16H31" stroke="#2a2a2a" strokeWidth="1.5"/><path d="M13 5V11M23 5V11" stroke="#2a2a2a" strokeWidth="1.5" strokeLinecap="round"/><rect x="10" y="20" width="5" height="5" rx="1" fill="#D4A853" opacity="0.4"/></svg>
                 <p style={{ color: '#555', fontSize: '14px', marginBottom: '4px' }}>Calendly booking will appear here</p>
-                <p style={{ color: '#3a3a3a', fontSize: '12px' }}>Add your Calendly URL to the config at the top of this file</p>
+                <p style={{ color: '#3a3a3a', fontSize: '12px' }}>Set your Calendly URL via Admin → Onboarding Settings</p>
               </Card>
             )}
           </section>
+          )} {/* end kickoff */}
 
           {/* ── Section 9: Skipped Questions ──────────────────────────────── */}
           {skippedList.length > 0 && (

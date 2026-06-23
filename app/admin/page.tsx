@@ -22,6 +22,7 @@ import type {
   AppSettings,
   InfoBankEntry,
   VSLConfig,
+  OnboardingConfig,
 } from '@/types';
 
 type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings' | 'vsl' | 'onboarding';
@@ -114,6 +115,12 @@ export default function AdminPage() {
     assessment_active: true, webhook_url: '', accent_color: '#3b82f6', logo_url: '', admin_password_hash: '', chart_type: 'bar',
   });
   const [infoBankEntries, setInfoBankEntries] = useState<InfoBankEntry[]>([]);
+  const [onboardingConfig, setOnboardingConfig] = useState<OnboardingConfig>({
+    roadmap_image_url: '',
+    sop_creatives_url: '',
+    sop_campaigns_url: '',
+    calendly_url: '',
+  });
   const [vslConfig, setVslConfig] = useState<VSLConfig>({
     hero_headline: 'Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads',
     hero_subheadline: 'Only pay when patients actually book.',
@@ -166,6 +173,7 @@ export default function AdminPage() {
         if (configs.creative_comparison) setCreativeComparisonConfig({ ...configs.creative_comparison, show_row2: configs.creative_comparison.show_row2 !== 'false' });
         if (configs.settings) setAppSettings({ ...configs.settings, assessment_active: configs.settings.assessment_active !== 'false', show_video: false, show_case_study: true });
         if (configs.vsl) setVslConfig((prev) => ({ ...prev, ...configs.vsl }));
+        if (configs.onboarding) setOnboardingConfig((prev) => ({ ...prev, ...configs.onboarding }));
       }
     } catch (e) {
       toast.error('Failed to load data');
@@ -378,7 +386,15 @@ export default function AdminPage() {
           />
         )}
         {tab === 'onboarding' && (
-          <OnboardingManager token={token ?? ''} />
+          <OnboardingManager
+            token={token ?? ''}
+            config={onboardingConfig}
+            onSaveConfig={async (key, value) => {
+              await saveConfig('onboarding', { [key]: value });
+              setOnboardingConfig((prev) => ({ ...prev, [key]: value }));
+            }}
+            onUpload={uploadImage}
+          />
         )}
         {tab === 'settings' && (
           <SettingsPanel

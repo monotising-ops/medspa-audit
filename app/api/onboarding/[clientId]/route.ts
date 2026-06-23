@@ -11,6 +11,8 @@
 //   created_at TIMESTAMPTZ DEFAULT NOW(),
 //   updated_at TIMESTAMPTZ DEFAULT NOW()
 // );
+// Migration — run if table already exists:
+// ALTER TABLE client_onboarding ADD COLUMN IF NOT EXISTS hidden_sections TEXT[] DEFAULT '{}';
 // Also create Supabase Storage bucket named: onboarding-assets (public)
 
 import { NextRequest } from 'next/server';
@@ -52,19 +54,16 @@ export async function PATCH(
   const db = getAdminClient();
   const { data, error } = await db
     .from('client_onboarding')
-    .upsert(
-      {
-        client_id: clientId,
-        client_name: client_name ?? clientId,
-        form_data: form_data ?? {},
-        checklist_data: checklist_data ?? {},
-        skipped_questions: skipped_questions ?? [],
-        uploaded_files: uploaded_files ?? {},
-        completion_percentage,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'client_id' }
-    )
+    .update({
+      client_name: client_name ?? clientId,
+      form_data: form_data ?? {},
+      checklist_data: checklist_data ?? {},
+      skipped_questions: skipped_questions ?? [],
+      uploaded_files: uploaded_files ?? {},
+      completion_percentage,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('client_id', clientId)
     .select()
     .single();
 

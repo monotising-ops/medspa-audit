@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const db = getAdminClient();
   const { data, error } = await db
     .from('client_onboarding')
-    .select('client_id, client_name, completion_percentage, skipped_questions, created_at, updated_at')
+    .select('client_id, client_name, completion_percentage, skipped_questions, hidden_sections, created_at, updated_at')
     .order('updated_at', { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data ?? []);
@@ -35,6 +35,20 @@ export async function POST(request: NextRequest) {
     .single();
   if (error) return Response.json({ error: error.message }, { status: 500 });
   return Response.json(data);
+}
+
+export async function PATCH(request: NextRequest) {
+  const authErr = await requireAdmin(request);
+  if (authErr) return authErr;
+  const { client_id, hidden_sections } = await request.json();
+  if (!client_id) return Response.json({ error: 'client_id required' }, { status: 400 });
+  const db = getAdminClient();
+  const { error } = await db
+    .from('client_onboarding')
+    .update({ hidden_sections: hidden_sections ?? [] })
+    .eq('client_id', client_id);
+  if (error) return Response.json({ error: error.message }, { status: 500 });
+  return Response.json({ ok: true });
 }
 
 export async function DELETE(request: NextRequest) {

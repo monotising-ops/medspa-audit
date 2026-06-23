@@ -27,7 +27,7 @@ export type LeadTag = 'hot' | 'warm' | 'cool' | 'contacted' | 'booked';
 
 export type ContentType = 'analysis' | 'best_practice' | 'tip' | 'recommendation';
 
-export type ConfigSection = 'cover' | 'gate' | 'results_cta' | 'settings' | 'creative_comparison' | 'vsl';
+export type ConfigSection = 'cover' | 'gate' | 'results_cta' | 'settings' | 'creative_comparison' | 'vsl' | 'onboarding';
 
 export type ChartType = 'radar' | 'bar';
 
@@ -194,6 +194,13 @@ export interface VSLConfig {
   result3_before: string;
   result3_after: string;
   result3_highlight: string;
+}
+
+export interface OnboardingConfig {
+  roadmap_image_url: string;
+  sop_creatives_url: string;
+  sop_campaigns_url: string;
+  calendly_url: string;
 }
 
 export interface AppSettings {
