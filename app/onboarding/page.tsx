@@ -174,6 +174,9 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
   if (!url) {
     return <span style={{ color: '#444', fontSize: '13px' }}>→ {label} <span style={{ color: '#3a3a3a' }}>(coming soon)</span></span>;
   }
+  // Route through Google Docs Viewer so the browser renders inline instead of
+  // triggering a download (Supabase sets Content-Disposition: attachment).
+  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
   return (
     <>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -187,7 +190,8 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
         </button>
         <a
           href={url}
-          download
+          target="_blank"
+          rel="noopener noreferrer"
           style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, border: '1px solid rgba(212,168,83,0.3)', background: 'transparent', color: '#D4A853', textDecoration: 'none' }}
         >
           Download ↓
@@ -201,10 +205,10 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
           <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
             <span style={{ color: '#AAAAAA', fontSize: '13px', fontWeight: 600 }}>{label}</span>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <a href={url} download style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
+              <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
               <button
                 type="button"
-                onClick={() => setOpen(false)}
+                onClick={(e) => { e.stopPropagation(); setOpen(false); }}
                 style={{ background: 'none', border: 'none', color: '#737373', cursor: 'pointer', fontSize: '22px', lineHeight: 1, padding: '2px 6px' }}
               >
                 ×
@@ -212,10 +216,9 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
             </div>
           </div>
           <iframe
-            src={url}
+            src={viewerUrl}
             style={{ flex: 1, width: '100%', border: 'none', background: '#fff' }}
             title={label}
-            onClick={(e) => e.stopPropagation()}
           />
         </div>
       )}
