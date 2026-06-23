@@ -6,12 +6,18 @@ export async function GET(request: NextRequest) {
   const authErr = await requireAdmin(request);
   if (authErr) return authErr;
   const db = getAdminClient();
+  // Use select('*') so this works whether or not hidden_sections column exists yet.
+  // Strip the heavy JSONB blobs (form_data, checklist_data, uploaded_files) before returning.
   const { data, error } = await db
     .from('client_onboarding')
-    .select('client_id, client_name, completion_percentage, skipped_questions, hidden_sections, created_at, updated_at')
+    .select('*')
     .order('updated_at', { ascending: false });
   if (error) return Response.json({ error: error.message }, { status: 500 });
-  return Response.json(data ?? []);
+  const summary = (data ?? []).map(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ({ form_data, checklist_data, uploaded_files, ...rest }: Record<string, unknown>) => rest
+  );
+  return Response.json(summary);
 }
 
 export async function POST(request: NextRequest) {

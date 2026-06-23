@@ -56,11 +56,20 @@ function ManageSectionsModal({
         headers: { 'Content-Type': 'application/json', 'x-admin-token': token },
         body: JSON.stringify({ client_id: record.client_id, hidden_sections: next }),
       });
-      if (!res.ok) throw new Error('Failed');
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
       onUpdate(record.client_id, next);
-    } catch {
+    } catch (err: unknown) {
       setHidden(hidden); // revert
-      toast.error('Failed to save');
+      const msg = err instanceof Error ? err.message : 'Failed to save';
+      const needsMigration = msg.includes('hidden_sections') || msg.includes('does not exist');
+      toast.error(needsMigration
+        ? 'Run SQL migration first: ALTER TABLE client_onboarding ADD COLUMN IF NOT EXISTS hidden_sections TEXT[] DEFAULT \'{}\';'
+        : msg,
+        { duration: 8000 }
+      );
     } finally {
       setSaving(null);
     }
