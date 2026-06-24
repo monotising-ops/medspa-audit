@@ -178,27 +178,45 @@ function SkipBtn({ active, onClick }: { active: boolean; onClick: () => void }) 
 
 function DocPreviewButton({ url, label }: { url: string; label: string }) {
   const [open, setOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768 || /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+  }, []);
+
   if (!url) {
     return <span style={{ color: '#444', fontSize: '13px' }}>→ {label} <span style={{ color: '#3a3a3a' }}>(coming soon)</span></span>;
   }
-  // Route through Google Docs Viewer so the browser renders inline instead of
-  // triggering a download (Supabase sets Content-Disposition: attachment).
-  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+
+  // Server-side proxy strips Supabase's Content-Disposition:attachment so the PDF renders inline
+  const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(url)}`;
+
   return (
     <>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ color: '#D4A853', fontSize: '13px', fontWeight: 600 }}>→ {label}</span>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          style={{ padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)', color: '#D4A853', cursor: 'pointer', letterSpacing: '0.02em' }}
-        >
-          Preview ↗
-        </button>
+        {isMobile ? (
+          // On mobile, open the proxy URL directly in a new tab — iOS Safari renders PDFs natively
+          <a
+            href={proxyUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)', color: '#D4A853', textDecoration: 'none', letterSpacing: '0.02em' }}
+          >
+            Preview ↗
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            style={{ padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)', color: '#D4A853', cursor: 'pointer', letterSpacing: '0.02em' }}
+          >
+            Preview ↗
+          </button>
+        )}
         <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
+          href={proxyUrl}
+          download
           style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, border: '1px solid rgba(212,168,83,0.3)', background: 'transparent', color: '#D4A853', textDecoration: 'none' }}
         >
           Download ↓
@@ -212,7 +230,7 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
           <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
             <span style={{ color: '#AAAAAA', fontSize: '13px', fontWeight: 600 }}>{label}</span>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
+              <a href={proxyUrl} download style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setOpen(false); }}
@@ -223,7 +241,7 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
             </div>
           </div>
           <iframe
-            src={viewerUrl}
+            src={proxyUrl}
             style={{ flex: 1, width: '100%', border: 'none', background: '#fff' }}
             title={label}
           />
