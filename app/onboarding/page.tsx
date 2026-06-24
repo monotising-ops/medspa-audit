@@ -188,8 +188,8 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
     return <span style={{ color: '#444', fontSize: '13px' }}>→ {label} <span style={{ color: '#3a3a3a' }}>(coming soon)</span></span>;
   }
 
-  // Proxy strips Supabase's Content-Disposition:attachment — used for desktop iframe only
-  const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(url)}`;
+  // Google Docs Viewer renders PDFs inline on desktop without needing the file to allow iframing
+  const viewerUrl = `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
 
   const btnStyle: React.CSSProperties = {
     padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
@@ -209,12 +209,13 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
             Preview ↗
           </a>
         ) : (
+          // Desktop: Google Docs Viewer in an iframe — reliable on all desktop browsers
           <button type="button" onClick={() => setOpen(true)} style={btnStyle}>
             Preview ↗
           </button>
         )}
 
-        {/* Download: direct URL always — Supabase's attachment header triggers the save dialog */}
+        {/* Download: direct URL — Supabase's attachment header triggers the save dialog */}
         <a
           href={url}
           target="_blank"
@@ -225,7 +226,7 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
         </a>
       </div>
 
-      {/* Desktop-only iframe modal using proxy so PDF renders inline */}
+      {/* Desktop iframe modal — Google Docs Viewer handles Content-Disposition:attachment fine */}
       {open && (
         <div
           onClick={() => setOpen(false)}
@@ -245,7 +246,7 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
             </div>
           </div>
           <iframe
-            src={proxyUrl}
+            src={viewerUrl}
             style={{ flex: 1, width: '100%', border: 'none', background: '#fff' }}
             title={label}
           />
