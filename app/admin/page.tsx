@@ -120,6 +120,7 @@ export default function AdminPage() {
     sop_creatives_url: '',
     sop_campaigns_url: '',
     calendly_url: '',
+    agreement_url: '',
   });
   const [vslConfig, setVslConfig] = useState<VSLConfig>({
     hero_headline: 'Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads',

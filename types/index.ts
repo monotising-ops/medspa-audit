@@ -201,6 +201,7 @@ export interface OnboardingConfig {
   sop_creatives_url: string;
   sop_campaigns_url: string;
   calendly_url: string;
+  agreement_url: string;
 }
 
 export interface AppSettings {

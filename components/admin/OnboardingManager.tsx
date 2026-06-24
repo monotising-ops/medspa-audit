@@ -622,6 +622,7 @@ function SettingsPanel({
     roadmap: useRef<HTMLInputElement>(null),
     sop_creatives: useRef<HTMLInputElement>(null),
     sop_campaigns: useRef<HTMLInputElement>(null),
+    agreement: useRef<HTMLInputElement>(null),
   };
 
   useEffect(() => { setLocal({ ...config }); }, [config]);
@@ -676,6 +677,7 @@ function SettingsPanel({
       <input ref={refs.roadmap} type="file" style={{ display: 'none' }} />
       <input ref={refs.sop_creatives} type="file" style={{ display: 'none' }} />
       <input ref={refs.sop_campaigns} type="file" style={{ display: 'none' }} />
+      <input ref={refs.agreement} type="file" style={{ display: 'none' }} />
 
       {/* Roadmap image */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -810,6 +812,45 @@ function SettingsPanel({
             {saving === 'calendly_url' ? 'Saving…' : 'Save'}
           </button>
         </div>
+      </div>
+
+      {/* Agreement / Offer Doc */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <div>
+          <label style={{ fontSize: '12px', color: '#a1a1aa', fontWeight: 500 }}>Agreement / Offer Document (PDF)</label>
+          <p style={{ fontSize: '11px', color: '#444', margin: '3px 0 0' }}>Shown at the bottom of every onboarding page with a mandatory "I agree" checkbox.</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <input
+            type="text"
+            value={local.agreement_url}
+            onChange={(e) => setLocal((p) => ({ ...p, agreement_url: e.target.value }))}
+            placeholder="https://… or upload PDF →"
+            style={inputStyle}
+          />
+          <button
+            type="button"
+            onClick={() => handleUpload('agreement_url', 'agreement', 'onboarding/agreements', '.pdf,.doc,.docx')}
+            disabled={uploading === 'agreement_url'}
+            style={{ padding: '9px 14px', borderRadius: '8px', background: '#111', border: '1px solid #1e1e1e', color: '#a1a1aa', fontSize: '12px', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {uploading === 'agreement_url' ? 'Uploading…' : 'Upload PDF'}
+          </button>
+          <button
+            type="button"
+            onClick={() => saveField('agreement_url')}
+            disabled={saving === 'agreement_url'}
+            style={{ padding: '9px 14px', borderRadius: '8px', background: saving === 'agreement_url' ? '#111' : '#3b82f6', color: saving === 'agreement_url' ? '#525252' : '#fff', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {saving === 'agreement_url' ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+        {local.agreement_url && (
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <a href={local.agreement_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none' }}>Preview ↗</a>
+            <a href={local.agreement_url} download style={{ fontSize: '12px', color: '#D4A853', textDecoration: 'none' }}>Download ↓</a>
+          </div>
+        )}
       </div>
     </div>
   );

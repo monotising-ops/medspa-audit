@@ -19,6 +19,7 @@ type ObConfig = {
   sop_creatives_url: string;
   sop_campaigns_url: string;
   calendly_url: string;
+  agreement_url: string;
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -112,7 +113,7 @@ const UPLOAD_FIELDS = [
 type FormData = Record<string, string>;
 type ChecklistData = Record<string, { checked: boolean; inputs: Record<string, string> }>;
 
-const TOTAL_FIELDS = 15 + 5;
+const TOTAL_FIELDS = 15 + 5 + 1; // 15 intake + 5 checklist + 1 agreement checkbox
 
 function calcPct(form: FormData, checklist: ChecklistData): number {
   const filled = Object.values(form).filter((v) => typeof v === 'string' && v.trim().length > 0).length;
@@ -321,19 +322,28 @@ function FileUploadZone({
 
       {files.length < max && (
         <>
-          <input ref={inputRef} type="file" accept={accept} multiple={max > 1} className="hidden" style={{ display: 'none' }} onChange={(e) => handleFiles(e.target.files)} />
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
+          {/* Use a label linked to the input — avoids iOS Safari stripping `multiple` when using .click() programmatically */}
+          <input
+            ref={inputRef}
+            id={`upload-${fieldId}-${clientId}`}
+            type="file"
+            accept={accept}
+            multiple={max > 1}
+            style={{ display: 'none' }}
+            onChange={(e) => handleFiles(e.target.files)}
+          />
+          <label
+            htmlFor={`upload-${fieldId}-${clientId}`}
             style={{
-              padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, border: '1px dashed #2a2a2a',
-              background: 'transparent', color: uploading ? '#444' : '#888', cursor: uploading ? 'not-allowed' : 'pointer', transition: 'all 0.15s',
+              display: 'inline-block', padding: '10px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: 600,
+              border: '1px dashed #2a2a2a', background: 'transparent',
+              color: uploading ? '#444' : '#888', cursor: uploading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.15s', pointerEvents: uploading ? 'none' : 'auto',
             }}
           >
             {uploading ? 'Uploading…' : `+ Upload file${max > 1 ? 's' : ''}`}
             {max > 1 && files.length > 0 && <span style={{ color: '#555', fontWeight: 400 }}> ({files.length}/{max})</span>}
-          </button>
+          </label>
         </>
       )}
       {error && <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '6px' }}>{error}</p>}
@@ -503,7 +513,7 @@ function OnboardingContent() {
   const [isReturning, setIsReturning] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hiddenSections, setHiddenSections] = useState<string[]>([]);
-  const [obConfig, setObConfig] = useState<ObConfig>({ roadmap_image_url: '', sop_creatives_url: '', sop_campaigns_url: '', calendly_url: '' });
+  const [obConfig, setObConfig] = useState<ObConfig>({ roadmap_image_url: '', sop_creatives_url: '', sop_campaigns_url: '', calendly_url: '', agreement_url: '' });
   const [qOverrides, setQOverrides] = useState<{ id: string; label: string; placeholder: string; active: boolean }[]>([]);
   const [assetOverrides, setAssetOverrides] = useState<{ id: string; label: string; hint: string; active: boolean }[]>([]);
   const [checklistOverrides, setChecklistOverrides] = useState<{ id: string; title: string; desc: string; active: boolean }[]>([]);
@@ -857,6 +867,52 @@ function OnboardingContent() {
             )}
           </section>
           )} {/* end kickoff */}
+
+          {/* ── Agreement ─────────────────────────────────────────────────── */}
+          {obConfig.agreement_url && (
+          <section style={{ paddingBottom: '56px' }}>
+            <SectionHeader n="✦" title="Agreement & Offer Overview" subtitle="Please review the document below before confirming." />
+            <Card style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <DocPreviewButton url={obConfig.agreement_url} label="Offer Agreement — Monotising" />
+
+              {/* Mandatory agreement checkbox */}
+              <div
+                style={{
+                  background: checklistData['__agreement']?.checked ? 'rgba(34,197,94,0.05)' : 'rgba(212,168,83,0.04)',
+                  border: `1.5px solid ${checklistData['__agreement']?.checked ? 'rgba(34,197,94,0.3)' : 'rgba(212,168,83,0.25)'}`,
+                  borderRadius: '10px', padding: '16px 18px',
+                  display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer',
+                  transition: 'border-color 0.2s, background 0.2s',
+                }}
+                onClick={() => updateChecklist('__agreement', { checked: !checklistData['__agreement']?.checked, inputs: {} })}
+              >
+                <div style={{
+                  width: '22px', height: '22px', borderRadius: '6px', flexShrink: 0, marginTop: '1px',
+                  border: `2px solid ${checklistData['__agreement']?.checked ? '#22c55e' : '#D4A853'}`,
+                  background: checklistData['__agreement']?.checked ? '#22c55e' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s',
+                }}>
+                  {checklistData['__agreement']?.checked && (
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6L4.5 8.5L10 3" stroke="#000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  )}
+                </div>
+                <div>
+                  <p style={{ color: '#F5F5F5', fontWeight: 600, fontSize: '14px', margin: '0 0 3px', lineHeight: 1.3 }}>
+                    I agree to the following terms
+                  </p>
+                  <p style={{ color: '#777', fontSize: '12px', margin: 0 }}>
+                    By checking this box you confirm you have read and agree to the offer agreement above.
+                  </p>
+                </div>
+                {!checklistData['__agreement']?.checked && (
+                  <span style={{ fontSize: '10px', fontWeight: 700, color: '#D4A853', background: 'rgba(212,168,83,0.1)', border: '1px solid rgba(212,168,83,0.25)', borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap', marginLeft: 'auto', flexShrink: 0 }}>
+                    Required
+                  </span>
+                )}
+              </div>
+            </Card>
+          </section>
+          )}
 
           {/* ── Section 9: Skipped Questions ──────────────────────────────── */}
           {skippedList.length > 0 && (

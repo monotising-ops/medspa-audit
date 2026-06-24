@@ -18,7 +18,7 @@
 import { NextRequest } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 
-const TOTAL_FIELDS = 15 + 5; // 15 intake questions + 5 checklist items
+const TOTAL_FIELDS = 15 + 5 + 1; // 15 intake + 5 checklist + 1 agreement checkbox
 
 export async function GET(
   _request: NextRequest,
