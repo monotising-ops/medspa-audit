@@ -188,40 +188,44 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
     return <span style={{ color: '#444', fontSize: '13px' }}>→ {label} <span style={{ color: '#3a3a3a' }}>(coming soon)</span></span>;
   }
 
-  // Server-side proxy strips Supabase's Content-Disposition:attachment so the PDF renders inline
+  // Proxy strips Supabase's Content-Disposition:attachment — used for desktop iframe only
   const proxyUrl = `/api/pdf-proxy?url=${encodeURIComponent(url)}`;
+
+  const btnStyle: React.CSSProperties = {
+    padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700,
+    border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)',
+    color: '#D4A853', textDecoration: 'none', letterSpacing: '0.02em', cursor: 'pointer',
+    display: 'inline-block',
+  };
 
   return (
     <>
       <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
         <span style={{ color: '#D4A853', fontSize: '13px', fontWeight: 600 }}>→ {label}</span>
+
         {isMobile ? (
-          // On mobile, open the proxy URL directly in a new tab — iOS Safari renders PDFs natively
-          <a
-            href={proxyUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)', color: '#D4A853', textDecoration: 'none', letterSpacing: '0.02em' }}
-          >
+          // Mobile: open direct URL in new tab — iOS Safari shows its native PDF viewer
+          <a href={url} target="_blank" rel="noopener noreferrer" style={btnStyle}>
             Preview ↗
           </a>
         ) : (
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            style={{ padding: '9px 20px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, border: '1.5px solid rgba(212,168,83,0.55)', background: 'rgba(212,168,83,0.08)', color: '#D4A853', cursor: 'pointer', letterSpacing: '0.02em' }}
-          >
+          <button type="button" onClick={() => setOpen(true)} style={btnStyle}>
             Preview ↗
           </button>
         )}
+
+        {/* Download: direct URL always — Supabase's attachment header triggers the save dialog */}
         <a
-          href={proxyUrl}
-          download
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
           style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', fontWeight: 600, border: '1px solid rgba(212,168,83,0.3)', background: 'transparent', color: '#D4A853', textDecoration: 'none' }}
         >
           Download ↓
         </a>
       </div>
+
+      {/* Desktop-only iframe modal using proxy so PDF renders inline */}
       {open && (
         <div
           onClick={() => setOpen(false)}
@@ -230,7 +234,7 @@ function DocPreviewButton({ url, label }: { url: string; label: string }) {
           <div style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1a1a1a', flexShrink: 0 }}>
             <span style={{ color: '#AAAAAA', fontSize: '13px', fontWeight: 600 }}>{label}</span>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <a href={proxyUrl} download style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
+              <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: '#D4A853', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>Download ↓</a>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setOpen(false); }}
