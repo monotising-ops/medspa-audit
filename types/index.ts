@@ -98,7 +98,8 @@ export interface Lead {
 // Human labels for known magnets. Unknown ids fall back to the raw id.
 export const MAGNET_LABELS: Record<string, string> = {
   'medspa-roadmap': 'Med Spa Roadmap',
-  'creative-audit': 'Creative Audit',
+  // DB magnet_id stays 'creative-audit'; label matches the public /ImageADsGuide URL.
+  'creative-audit': 'Image Ads Guide',
   'structure-audit': 'Structure Audit',
   'booking-audit': 'Booking Audit',
 };
