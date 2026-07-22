@@ -13,7 +13,35 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Lead, LeadTag, Grade, RevenueTier, AnswerRecord } from '@/types';
-import { cn, formatDate, formatRevenueTier, gradeColor, domainScoreColor } from '@/lib/utils';
+import { magnetLabel } from '@/types';
+import { cn, formatDate, formatRevenueTier, domainScoreColor } from '@/lib/utils';
+
+// ─── Cross-magnet grade helpers ────────────────────────────────────────────────
+// Different magnets use different grade vocabularies (roadmap: critical /
+// underperforming / functional / strong; creative-audit: critical / leaking /
+// functional / strong). Resolve label + color for any of them.
+const GRADE_COLOR_MAP: Record<string, string> = {
+  critical: '#ef4444',
+  underperforming: '#f97316',
+  leaking: '#f97316',
+  functional: '#eab308',
+  strong: '#22c55e',
+};
+
+function gradeColorAny(grade: string): string {
+  return GRADE_COLOR_MAP[grade] ?? '#71717a';
+}
+
+function gradeLabelAny(grade: string): string {
+  return grade ? grade.charAt(0).toUpperCase() + grade.slice(1) : '—';
+}
+
+// Short 2-letter tag for a domain key ('lead_gen' -> 'LG', 'offer_framing' -> 'OF').
+function domainShort(key: string): string {
+  const parts = key.split('_');
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return key.slice(0, 2).toUpperCase();
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -148,17 +176,19 @@ interface DomainScoreBarsProps {
 }
 
 function DomainScoreBars({ domainScores }: DomainScoreBarsProps) {
+  // Generic across magnets: iterate whatever domain keys the lead has and
+  // scale each bar relative to that lead's strongest domain (relative shape).
+  const entries = Object.entries(domainScores ?? {}) as [string, number][];
+  const max = Math.max(1, ...entries.map(([, v]) => v ?? 0));
   return (
     <div className="flex flex-col gap-1 min-w-[80px]">
-      {DOMAIN_KEYS.map((key) => {
-        const score = domainScores[key] ?? 0;
-        // Assume max per domain ~ 20 pts; we show percentage of 20
-        const pct = Math.min(1, score / 20);
+      {entries.map(([key, score]) => {
+        const pct = Math.min(1, (score ?? 0) / max);
         const color = domainScoreColor(pct);
         return (
-          <div key={key} className="flex items-center gap-1.5">
+          <div key={key} className="flex items-center gap-1.5" title={`${key}: ${score ?? 0}`}>
             <span className="text-[9px] text-[#52525b] w-5 flex-shrink-0">
-              {DOMAIN_SHORT[key]}
+              {domainShort(key)}
             </span>
             <div className="flex-1 h-1.5 rounded-full bg-[#1f1f1f] overflow-hidden">
               <div
@@ -244,12 +274,43 @@ function ExpandedRow({ lead, colSpan }: ExpandedRowProps) {
     <tr className="bg-[#0a0a0a]">
       <td colSpan={colSpan} className="px-4 py-4 border-t border-[#1f1f1f]">
         <div className="space-y-2">
-          {lead.phone && (
-            <p className="text-xs text-[#a1a1aa] mb-2">
-              <span className="text-[#525252]">Phone: </span>
-              <span className="text-[#D4A847] font-medium">{lead.phone}</span>
-            </p>
+          {/* Their self-described struggle — the DM opener. Surfaced first. */}
+          {lead.struggle_text && (
+            <div className="mb-3 rounded-lg border border-[#D4A847]/25 bg-[#D4A847]/[0.06] px-3 py-2.5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#D4A847] mb-1">
+                Where they struggle most (their words)
+              </p>
+              <p className="text-sm text-[#f5f5f5] leading-relaxed">{lead.struggle_text}</p>
+            </div>
           )}
+          <div className="flex flex-wrap gap-x-5 gap-y-1 mb-3">
+            {lead.phone && (
+              <p className="text-xs text-[#a1a1aa]">
+                <span className="text-[#525252]">Phone: </span>
+                <span className="text-[#D4A847] font-medium">{lead.phone}</span>
+              </p>
+            )}
+            {lead.ad_link && (
+              <p className="text-xs text-[#a1a1aa]">
+                <span className="text-[#525252]">Ads: </span>
+                <a
+                  href={lead.ad_link.startsWith('http') ? lead.ad_link : `https://instagram.com/${lead.ad_link.replace(/^@/, '')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#3b82f6] font-medium hover:underline"
+                >
+                  {lead.ad_link}
+                </a>
+                <span className="ml-2 rounded-full bg-green-500/15 px-1.5 py-0.5 text-[9px] font-bold uppercase text-green-400">
+                  Ad provided
+                </span>
+              </p>
+            )}
+            <p className="text-xs text-[#a1a1aa]">
+              <span className="text-[#525252]">Magnet: </span>
+              <span className="text-[#f5f5f5]">{magnetLabel(lead.magnet_id)}</span>
+            </p>
+          </div>
           <p className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-wide mb-3">
             Answer Breakdown
           </p>
@@ -326,6 +387,7 @@ export default function LeadsTable({
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterGrade, setFilterGrade] = useState<Grade | ''>('');
+  const [filterMagnet, setFilterMagnet] = useState<string>('');
   const [filterRevenue, setFilterRevenue] = useState<RevenueTier | ''>('');
   const [filterTag, setFilterTag] = useState<LeadTag | ''>('');
   const [filterScoreMin, setFilterScoreMin] = useState('');
@@ -355,6 +417,7 @@ export default function LeadsTable({
       ) return false;
     }
     if (filterGrade && lead.grade !== filterGrade) return false;
+    if (filterMagnet && (lead.magnet_id ?? 'medspa-roadmap') !== filterMagnet) return false;
     if (filterRevenue && lead.revenue_tier !== filterRevenue) return false;
     if (filterTag && !lead.tags?.includes(filterTag)) return false;
     if (filterScoreMin !== '' && lead.total_score < Number(filterScoreMin)) return false;
@@ -378,6 +441,12 @@ export default function LeadsTable({
     if (av > bv) return sortDir === 'asc' ? 1 : -1;
     return 0;
   });
+
+  // Distinct magnets present in the data (for the magnet filter).
+  const magnetOptions = Array.from(
+    new Set(leads.map((l) => l.magnet_id ?? 'medspa-roadmap')),
+  );
+  const showMagnetColumn = magnetOptions.length > 1;
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -464,8 +533,8 @@ export default function LeadsTable({
   const allSelected = sorted.length > 0 && selectedIds.size === sorted.length;
   const someSelected = selectedIds.size > 0;
 
-  // 10 columns (checkbox, date, name/email, spa, revenue, score, grade, domains, tags, notes, expand)
-  const totalCols = 11;
+  // checkbox, date, name/email, spa, [magnet], revenue, score, grade, domains, tags, notes, expand
+  const totalCols = 11 + (showMagnetColumn ? 1 : 0);
 
   return (
     <div className="space-y-4">
@@ -530,6 +599,19 @@ export default function LeadsTable({
           ))}
         </select>
 
+        {showMagnetColumn && (
+          <select
+            value={filterMagnet}
+            onChange={(e) => setFilterMagnet(e.target.value)}
+            className={cn(selectClass, 'w-44')}
+          >
+            <option value="">All Magnets</option>
+            {magnetOptions.map((m) => (
+              <option key={m} value={m}>{magnetLabel(m)}</option>
+            ))}
+          </select>
+        )}
+
         <select
           value={filterRevenue}
           onChange={(e) => setFilterRevenue(e.target.value as RevenueTier | '')}
@@ -570,11 +652,12 @@ export default function LeadsTable({
           />
         </div>
 
-        {(filterGrade || filterRevenue || filterTag || filterScoreMin || filterScoreMax) && (
+        {(filterGrade || filterMagnet || filterRevenue || filterTag || filterScoreMin || filterScoreMax) && (
           <button
             type="button"
             onClick={() => {
               setFilterGrade('');
+              setFilterMagnet('');
               setFilterRevenue('');
               setFilterTag('');
               setFilterScoreMin('');
@@ -640,6 +723,11 @@ export default function LeadsTable({
               <SortHeader label="Date"         sortKey="created_at"  currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Name / Email" sortKey="name"        currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Spa Name"     sortKey="spa_name"    currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+              {showMagnetColumn && (
+                <th scope="col" className="whitespace-nowrap px-4 py-3 text-left text-xs font-semibold text-[#71717a] uppercase tracking-wide">
+                  Magnet
+                </th>
+              )}
               <SortHeader label="Revenue"      sortKey="revenue_tier" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Score"        sortKey="total_score" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
               <SortHeader label="Grade"        sortKey="grade"       currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
@@ -669,7 +757,7 @@ export default function LeadsTable({
             {sorted.map((lead) => {
               const isExpanded = expandedIds.has(lead.id);
               const isSelected = selectedIds.has(lead.id);
-              const gc = gradeColor(lead.grade);
+              const gc = gradeColorAny(lead.grade);
               const scorePercent = lead.max_score > 0 ? lead.total_score / lead.max_score : 0;
 
               return (
@@ -718,6 +806,15 @@ export default function LeadsTable({
                       </span>
                     </td>
 
+                    {/* Magnet */}
+                    {showMagnetColumn && (
+                      <td className="px-4 py-3 align-middle">
+                        <span className="rounded-md bg-[#1f1f1f] px-2 py-1 text-xs text-[#a1a1aa] whitespace-nowrap">
+                          {magnetLabel(lead.magnet_id)}
+                        </span>
+                      </td>
+                    )}
+
                     {/* Revenue tier badge */}
                     <td className="px-4 py-3 align-middle">
                       <span className="rounded-full bg-[#1f1f1f] px-2.5 py-1 text-xs text-[#a1a1aa] whitespace-nowrap">
@@ -753,7 +850,7 @@ export default function LeadsTable({
                           color: gc,
                         }}
                       >
-                        {GRADE_LABELS[lead.grade]}
+                        {GRADE_LABELS[lead.grade] ?? gradeLabelAny(lead.grade)}
                       </span>
                     </td>
 

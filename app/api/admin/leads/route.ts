@@ -43,10 +43,13 @@ export async function GET(request: NextRequest) {
     const flat = (data ?? []).map((l) => ({
       id: l.id,
       created_at: l.created_at,
+      magnet_id: l.magnet_id ?? 'medspa-roadmap',
       name: l.name,
       email: l.email,
       phone: l.phone ?? '',
       spa_name: l.spa_name,
+      struggle_text: l.struggle_text ?? '',
+      ad_link: l.ad_link ?? '',
       revenue_tier: l.revenue_tier,
       location_count: l.location_count,
       top_treatments: (l.top_treatments ?? []).join('; '),

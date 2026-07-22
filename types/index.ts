@@ -87,6 +87,25 @@ export interface Lead {
   grade: Grade;
   tags: LeadTag[];
   notes: string;
+  // ─── Multi-magnet fields (shared leads table) ───
+  // Which lead magnet produced this row. Existing rows = 'medspa-roadmap'.
+  magnet_id?: string;
+  // Creative Audit (and future magnets): free-text struggle + optional ad link.
+  struggle_text?: string | null;
+  ad_link?: string | null;
+}
+
+// Human labels for known magnets. Unknown ids fall back to the raw id.
+export const MAGNET_LABELS: Record<string, string> = {
+  'medspa-roadmap': 'Med Spa Roadmap',
+  'creative-audit': 'Creative Audit',
+  'structure-audit': 'Structure Audit',
+  'booking-audit': 'Booking Audit',
+};
+
+export function magnetLabel(id?: string): string {
+  if (!id) return 'Med Spa Roadmap';
+  return MAGNET_LABELS[id] ?? id;
 }
 
 // ─── Results Content ──────────────────────────────────────────────────────────
