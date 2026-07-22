@@ -10,6 +10,7 @@ import SettingsPanel from '@/components/admin/SettingsPanel';
 import InfoBank from '@/components/admin/InfoBank';
 import VSLEditor from '@/components/admin/VSLEditor';
 import OnboardingManager from '@/components/admin/OnboardingManager';
+import ImageAdsAdmin from '@/components/admin/imageads/ImageAdsAdmin';
 import type {
   Question,
   Lead,
@@ -25,7 +26,8 @@ import type {
   OnboardingConfig,
 } from '@/types';
 
-type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'leads' | 'settings' | 'vsl' | 'onboarding';
+type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'settings' | 'vsl' | 'onboarding';
+type View = 'medspa' | 'imageads' | 'leads';
 
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('');
@@ -79,12 +81,11 @@ function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   );
 }
 
-const TABS: { id: Tab; label: string }[] = [
+const MEDSPA_TABS: { id: Tab; label: string }[] = [
   { id: 'sequence', label: 'Sequence Editor' },
   { id: 'questions', label: 'Questions' },
   { id: 'content', label: 'Results Content' },
   { id: 'infobank', label: 'Info Bank' },
-  { id: 'leads', label: 'Leads' },
   { id: 'vsl', label: 'VSL Page' },
   { id: 'onboarding', label: 'Onboarding' },
   { id: 'settings', label: 'Settings' },
@@ -92,7 +93,9 @@ const TABS: { id: Tab; label: string }[] = [
 
 export default function AdminPage() {
   const [token, setToken] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('leads');
+  const [view, setView] = useState<View>('leads');
+  const [tab, setTab] = useState<Tab>('sequence');
+  const [rawConfigs, setRawConfigs] = useState<Record<string, Record<string, string>>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [contents, setContents] = useState<ResultContent[]>([]);
@@ -163,6 +166,7 @@ export default function AdminPage() {
       if (configRes.ok) {
         const { configs, gradeTiers: gt } = await configRes.json();
         setGradeTiers(gt ?? []);
+        setRawConfigs(configs ?? {});
         if (configs.cover) setCoverConfig(configs.cover as CoverConfig);
         if (configs.gate) setGateConfig({
           ...configs.gate,
@@ -235,26 +239,49 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {/* Tab bar */}
-      <div className="border-b border-[#1e1e1e] px-6 flex gap-0 overflow-x-auto">
-        {TABS.map((t) => (
+      {/* Top-level: which lead magnet (or shared Leads) */}
+      <div className="border-b border-[#1e1e1e] px-6 py-3 flex items-center gap-2 overflow-x-auto">
+        {([
+          { id: 'medspa', label: 'Med Spa Audit' },
+          { id: 'imageads', label: 'Image Ads Guide' },
+          { id: 'leads', label: 'Leads' },
+        ] as { id: View; label: string }[]).map((m) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
-              tab === t.id
-                ? 'border-[#3b82f6] text-white'
-                : 'border-transparent text-[#737373] hover:text-[#f5f5f5]'
+            key={m.id}
+            onClick={() => setView(m.id)}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
+              view === m.id
+                ? 'bg-[#D4A847] text-[#0a0a0a]'
+                : 'bg-[#111] text-[#a1a1aa] hover:text-[#f5f5f5] border border-[#1e1e1e]'
             }`}
           >
-            {t.label}
+            {m.label}
           </button>
         ))}
       </div>
 
+      {/* Med Spa Audit sub-tabs */}
+      {view === 'medspa' && (
+        <div className="border-b border-[#1e1e1e] px-6 flex gap-0 overflow-x-auto">
+          {MEDSPA_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                tab === t.id
+                  ? 'border-[#3b82f6] text-white'
+                  : 'border-transparent text-[#737373] hover:text-[#f5f5f5]'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Tab content */}
       <div className="p-6">
-        {tab === 'sequence' && (
+        {view === 'medspa' && tab === 'sequence' && (
           <SequenceEditor
             coverConfig={coverConfig}
             gateConfig={gateConfig}
@@ -267,7 +294,7 @@ export default function AdminPage() {
             onUploadImage={uploadImage}
           />
         )}
-        {tab === 'questions' && (
+        {view === 'medspa' && tab === 'questions' && (
           <QuestionManager
             questions={questions}
             onReorder={async (qs) => {
@@ -306,7 +333,7 @@ export default function AdminPage() {
             onUploadImage={async (file, qId) => uploadImage(file, `questions/${qId}`)}
           />
         )}
-        {tab === 'content' && (
+        {view === 'medspa' && tab === 'content' && (
           <ResultsContentManager
             contents={contents}
             gradeTiers={gradeTiers}
@@ -335,7 +362,7 @@ export default function AdminPage() {
             onUploadImage={async (file, domain) => uploadImage(file, `content/${domain}`)}
           />
         )}
-        {tab === 'infobank' && (
+        {view === 'medspa' && tab === 'infobank' && (
           <InfoBank
             questions={questions}
             entries={infoBankEntries}
@@ -358,7 +385,7 @@ export default function AdminPage() {
             }}
           />
         )}
-        {tab === 'leads' && (
+        {view === 'leads' && (
           <LeadsTable
             leads={leads}
             onUpdateLead={async (id, updates) => {
@@ -377,7 +404,7 @@ export default function AdminPage() {
             onRefresh={fetchAll}
           />
         )}
-        {tab === 'vsl' && (
+        {view === 'medspa' && tab === 'vsl' && (
           <VSLEditor
             config={vslConfig}
             onSave={async (c) => {
@@ -386,7 +413,7 @@ export default function AdminPage() {
             }}
           />
         )}
-        {tab === 'onboarding' && (
+        {view === 'medspa' && tab === 'onboarding' && (
           <OnboardingManager
             token={token ?? ''}
             config={onboardingConfig}
@@ -397,7 +424,7 @@ export default function AdminPage() {
             onUpload={uploadImage}
           />
         )}
-        {tab === 'settings' && (
+        {view === 'medspa' && tab === 'settings' && (
           <SettingsPanel
             settings={appSettings}
             onSave={async (s: Partial<AppSettings>) => {
@@ -410,6 +437,14 @@ export default function AdminPage() {
             }}
             onUploadLogo={async (file: File) => uploadImage(file, 'brand')}
             assessmentUrl={typeof window !== 'undefined' ? window.location.origin : ''}
+          />
+        )}
+
+        {view === 'imageads' && (
+          <ImageAdsAdmin
+            configs={rawConfigs}
+            onSaveConfig={saveConfig}
+            onUploadImage={uploadImage}
           />
         )}
       </div>
