@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import SequenceEditor from '@/components/admin/SequenceEditor';
 import QuestionManager from '@/components/admin/QuestionManager';
@@ -26,8 +26,8 @@ import type {
   OnboardingConfig,
 } from '@/types';
 
-type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'settings' | 'vsl' | 'onboarding';
-type View = 'medspa' | 'imageads' | 'leads';
+type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'settings';
+type View = 'medspa' | 'vsl' | 'onboarding' | 'imageads' | 'leads';
 
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('');
@@ -86,10 +86,93 @@ const MEDSPA_TABS: { id: Tab; label: string }[] = [
   { id: 'questions', label: 'Questions' },
   { id: 'content', label: 'Results Content' },
   { id: 'infobank', label: 'Info Bank' },
-  { id: 'vsl', label: 'VSL Page' },
-  { id: 'onboarding', label: 'Onboarding' },
   { id: 'settings', label: 'Settings' },
 ];
+
+// Top-level workspaces — each one owns a distinct page of the product.
+const WORKSPACES: { id: View; label: string; desc: string }[] = [
+  { id: 'medspa',     label: 'Med Spa Audit',    desc: 'Assessment funnel — questions, results, scoring' },
+  { id: 'vsl',        label: 'VSL Landing Page', desc: 'The /offer page — hero, proof, guarantee, booking' },
+  { id: 'onboarding', label: 'Onboarding',       desc: 'Client portal at /onboarding' },
+  { id: 'imageads',   label: 'Image Ads Guide',  desc: 'Second lead magnet' },
+  { id: 'leads',      label: 'Leads',            desc: 'Every lead across all magnets' },
+];
+
+function WorkspaceMenu({ view, onSelect }: { view: View; onSelect: (v: View) => void }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = WORKSPACES.find((w) => w.id === view) ?? WORKSPACES[0];
+
+  useEffect(() => {
+    if (!open) return;
+    function onDocClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="group -ml-2 flex items-center gap-2 rounded-lg px-2 py-1 transition-colors hover:bg-[#111]"
+      >
+        <span className="text-white font-bold text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+          {current.label}
+        </span>
+        <svg
+          width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+          className={`text-[#737373] transition-transform group-hover:text-white ${open ? 'rotate-180' : ''}`}
+        >
+          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      <p className="text-[#525252] text-xs mt-0.5 pl-0.5">{current.desc}</p>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute left-0 top-full z-50 mt-2 w-[19rem] rounded-xl border border-[#1e1e1e] bg-[#0d0d0d] p-1.5 shadow-2xl shadow-black/60"
+        >
+          {WORKSPACES.map((w) => (
+            <button
+              key={w.id}
+              role="menuitem"
+              type="button"
+              onClick={() => { onSelect(w.id); setOpen(false); }}
+              className={`w-full rounded-lg px-3 py-2.5 text-left transition-colors ${
+                w.id === view ? 'bg-[#1a1a1a]' : 'hover:bg-[#141414]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className={`text-sm font-semibold ${w.id === view ? 'text-[#D4A847]' : 'text-[#f5f5f5]'}`}>
+                  {w.label}
+                </span>
+                {w.id === view && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="shrink-0 text-[#D4A847]">
+                    <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs leading-snug text-[#525252]">{w.desc}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const [token, setToken] = useState<string | null>(null);
@@ -223,41 +306,15 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[#050505]">
-      {/* Header */}
-      <div className="border-b border-[#1e1e1e] px-6 py-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-white font-bold text-lg" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-            Growth Audit Admin
-          </h1>
-          <p className="text-[#525252] text-xs mt-0.5">Manage your assessment content and leads</p>
-        </div>
+      {/* Header — the title itself is the workspace switcher */}
+      <div className="border-b border-[#1e1e1e] px-6 py-4 flex items-start justify-between">
+        <WorkspaceMenu view={view} onSelect={setView} />
         <button
           onClick={() => setToken(null)}
-          className="text-[#737373] hover:text-white text-sm transition-colors"
+          className="text-[#737373] hover:text-white text-sm transition-colors shrink-0"
         >
           Sign out
         </button>
-      </div>
-
-      {/* Top-level: which lead magnet (or shared Leads) */}
-      <div className="border-b border-[#1e1e1e] px-6 py-3 flex items-center gap-2 overflow-x-auto">
-        {([
-          { id: 'medspa', label: 'Med Spa Audit' },
-          { id: 'imageads', label: 'Image Ads Guide' },
-          { id: 'leads', label: 'Leads' },
-        ] as { id: View; label: string }[]).map((m) => (
-          <button
-            key={m.id}
-            onClick={() => setView(m.id)}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors whitespace-nowrap ${
-              view === m.id
-                ? 'bg-[#D4A847] text-[#0a0a0a]'
-                : 'bg-[#111] text-[#a1a1aa] hover:text-[#f5f5f5] border border-[#1e1e1e]'
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
       </div>
 
       {/* Med Spa Audit sub-tabs */}
@@ -404,7 +461,7 @@ export default function AdminPage() {
             onRefresh={fetchAll}
           />
         )}
-        {view === 'medspa' && tab === 'vsl' && (
+        {view === 'vsl' && (
           <VSLEditor
             config={vslConfig}
             onSave={async (c) => {
@@ -413,7 +470,7 @@ export default function AdminPage() {
             }}
           />
         )}
-        {view === 'medspa' && tab === 'onboarding' && (
+        {view === 'onboarding' && (
           <OnboardingManager
             token={token ?? ''}
             config={onboardingConfig}
