@@ -191,29 +191,63 @@ export interface CreativeComparisonConfig {
 }
 
 export interface VSLConfig {
+  // ── Hero ──────────────────────────────────────────────
+  hero_badge: string;
   hero_headline: string;
   hero_subheadline: string;
+  hero_pill_1: string;
+  hero_pill_2: string;
+
+  // ── Vertical 9:16 VSL ─────────────────────────────────
+  video_url: string;
+  video_poster_url: string;
+  video_overlay_title: string;
+  video_overlay_cta: string;
+
+  // ── Lead form ─────────────────────────────────────────
   hero_cta_text: string;
   hero_tagline: string;
-  risk_headline: string;
-  risk_body: string;
+  form_headline: string;
+
+  // ── Social proof ──────────────────────────────────────
+  proof_eyebrow: string;
   proof_headline: string;
+  proof_disclaimer: string;
+
+  t1_name: string; t1_metric: string; t1_subtitle: string; t1_body: string;
+  t1_video_url: string; t1_poster_url: string;
+  t2_name: string; t2_metric: string; t2_subtitle: string; t2_body: string;
+  t2_video_url: string; t2_poster_url: string;
+  t3_name: string; t3_metric: string; t3_subtitle: string; t3_body: string;
+  t3_video_url: string; t3_poster_url: string;
+
+  // ── How it works ──────────────────────────────────────
+  how_eyebrow: string;
+  how_headline: string;
+  how_headline_accent: string;
+  how_subtext: string;
+
+  step1_label: string;
+  step1_item1_title: string; step1_item1_body: string;
+  step1_item2_title: string; step1_item2_body: string;
+  step1_item3_title: string; step1_item3_body: string;
+  step2_label: string;
+  step2_item1_title: string; step2_item1_body: string;
+  step2_item2_title: string; step2_item2_body: string;
+  step2_item3_title: string; step2_item3_body: string;
+  step3_label: string;
+  step3_item1_title: string; step3_item1_body: string;
+  step3_item2_title: string; step3_item2_body: string;
+  step3_item3_title: string; step3_item3_body: string;
+
+  // ── Footer ────────────────────────────────────────────
+  footer_company: string;
+  footer_disclaimer: string;
+  footer_privacy_url: string;
+  footer_terms_url: string;
+
+  // ── Retained ──────────────────────────────────────────
   calendly_url: string;
-  result1_name: string;
-  result1_location: string;
-  result1_before: string;
-  result1_after: string;
-  result1_highlight: string;
-  result2_name: string;
-  result2_location: string;
-  result2_before: string;
-  result2_after: string;
-  result2_highlight: string;
-  result3_name: string;
-  result3_location: string;
-  result3_before: string;
-  result3_after: string;
-  result3_highlight: string;
 }
 
 export interface OnboardingConfig {

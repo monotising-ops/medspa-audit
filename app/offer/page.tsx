@@ -1,35 +1,22 @@
 'use client';
 
 // TODO: Connect Supabase — write form responses to 'offer_leads' table on submit
-// TODO: Add Meta Pixel — fire PageView on mount, Lead event on form completion
-// TODO: Replace placeholder testimonial containers with real DM screenshot images
-// TODO: Add actual client video embeds (Loom/YouTube URLs) in video placeholder slots
-// TODO: Wire up form submit to webhook / CRM once backend is ready
+// TODO: Add Meta Pixel — map the events in lib/vsl-events.ts to Pixel + CAPI
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { track, trackOnce } from '@/lib/vsl-events';
+import { defaultVSL } from '@/lib/vsl-defaults';
 import type { VSLConfig } from '@/types';
 
-// ─── Default VSL config (used before API loads) ───────────────────────────────
+// ─── Palette ──────────────────────────────────────────────────────────────────
 
-function defaultVSL(): VSLConfig {
-  return {
-    hero_headline: 'Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads',
-    hero_subheadline: 'Only pay when patients actually book.',
-    hero_cta_text: 'Book My Free Strategy Call →',
-    hero_tagline: 'Takes 60 seconds · No credit card · Free strategy call',
-    risk_headline: 'We put our money where our mouth is.',
-    risk_body: "If we don't deliver real, booked appointments for your clinic — you don't pay. That's our guarantee.",
-    proof_headline: 'See why clinics across the US and Canada trust Monotising',
-    calendly_url: '',
-    result1_name: "Aman & Niel's Med Spa", result1_location: 'Local Market',
-    result1_before: '$7,800 adspend · 1.26× ROAS', result1_after: '$4,060 adspend · 4.43× ROAS · $17,700+ collected', result1_highlight: '71 confirmed bookings in one month',
-    result2_name: 'Family-Run Med Spa', result2_location: 'New York, NY',
-    result2_before: '$3,200/mo · ~8 new patients/mo', result2_after: '$2,800/mo · 31 new patients/mo', result2_highlight: '4× new patient volume at lower spend',
-    result3_name: 'Aesthetic Clinic', result3_location: 'Toronto, ON',
-    result3_before: 'No paid advertising', result3_after: '$11,000+ in bookings in first 30 days', result3_highlight: 'First 5-figure month from a cold start',
-  };
-}
+const GOLD = '#D4A853';
+const GOLD_LT = '#E8C26A';
+const INK = '#F5F5F5';
+const MUTED = '#8A8A8A';
+const CARD = '#0C0C0C';
+const LINE = '#1C1A16';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,56 +57,418 @@ const CHALLENGE_OPTIONS = [
   'Need a better system',
 ];
 
-const CLIENT_RESULTS = [
-  {
-    id: 1,
-    name: "Aman & Niel's Med Spa",
-    location: 'Local Market',
-    before: '$7,800 adspend · 1.26× ROAS',
-    after: '$4,060 adspend · 4.43× ROAS · $17,700+ collected',
-    highlight: '71 confirmed bookings in one month',
-  },
-  {
-    id: 2,
-    name: 'Family-Run Med Spa',
-    location: 'New York, NY',
-    before: '$3,200/mo · ~8 new patients/mo',
-    after: '$2,800/mo · 31 new patients/mo',
-    highlight: '4× new patient volume at lower spend',
-  },
-  {
-    id: 3,
-    name: 'Aesthetic Clinic',
-    location: 'Toronto, ON',
-    before: 'No paid advertising',
-    after: '$11,000+ in bookings in first 30 days',
-    highlight: 'First 5-figure month from a cold start',
-  },
-];
-
 // ─── Styles injected once ─────────────────────────────────────────────────────
 
 const GLOBAL_STYLES = `
-  @keyframes slideInRight {
-    from { opacity: 0; transform: translateX(28px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes slideInLeft {
-    from { opacity: 0; transform: translateX(-28px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(16px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
+  @keyframes slideInRight { from { opacity: 0; transform: translateX(28px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes slideInLeft  { from { opacity: 0; transform: translateX(-28px); } to { opacity: 1; transform: translateX(0); } }
+  @keyframes fadeUp       { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulseRing    { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.06); opacity: .92; } }
+
   .offer-option-btn:hover {
-    border-color: #D4A853 !important;
+    border-color: ${GOLD} !important;
     background: rgba(212,168,83,0.06) !important;
-    color: #F5F5F5 !important;
+    color: ${INK} !important;
   }
   .offer-scroll::-webkit-scrollbar { display: none; }
   .offer-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .vsl-unmute { animation: pulseRing 2.4s ease-in-out infinite; }
+  .vsl-unmute:active { transform: scale(0.97); }
+
+  .vsl-play-btn { transition: transform .18s ease, background .18s ease; }
+  .vsl-card:hover .vsl-play-btn { transform: scale(1.08); background: #fff; }
+
+  /* Reveal-on-scroll, progressive enhancement: visible by default. */
+  .reveal { animation: fadeUp .6s cubic-bezier(0.16,1,0.3,1) both; }
 `;
+
+// ─── Vertical 9:16 VSL with unmute overlay ────────────────────────────────────
+
+function VerticalVSL({ vsl }: { vsl: VSLConfig }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [unmuted, setUnmuted] = useState(false);
+
+  // Muted autoplay is the only autoplay mobile browsers allow. The overlay
+  // converts that silent preroll into a deliberate click.
+  useEffect(() => {
+    videoRef.current?.play().catch(() => {});
+  }, []);
+
+  const handleTimeUpdate = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !v.duration || !unmuted) return;
+    const pct = v.currentTime / v.duration;
+    if (pct >= 0.25) trackOnce('vsl_video_25');
+    if (pct >= 0.5) trackOnce('vsl_video_50');
+    if (pct >= 0.75) trackOnce('vsl_video_75');
+  }, [unmuted]);
+
+  function handleUnmute() {
+    const v = videoRef.current;
+    if (!v) return;
+
+    track('vsl_unmute_click');
+    setUnmuted(true);
+
+    // Restart from the top with sound — they have not really watched anything yet.
+    v.currentTime = 0;
+    v.muted = false;
+    v.volume = 1;
+    void v.play().catch(() => {});
+
+    // iOS Safari only fullscreens video via its own vendor method.
+    const ios = v as HTMLVideoElement & { webkitEnterFullscreen?: () => void };
+    if (typeof ios.webkitEnterFullscreen === 'function') {
+      ios.webkitEnterFullscreen();
+    } else if (typeof v.requestFullscreen === 'function') {
+      void v.requestFullscreen().catch(() => {});
+    }
+  }
+
+  const hasVideo = Boolean(vsl.video_url);
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: '400px',
+        margin: '0 auto',
+        aspectRatio: '9 / 16',
+        borderRadius: '18px',
+        overflow: 'hidden',
+        background: '#111',
+        border: `1px solid ${LINE}`,
+        boxShadow: '0 24px 70px -20px rgba(0,0,0,0.9)',
+      }}
+    >
+      {hasVideo ? (
+        <video
+          ref={videoRef}
+          src={vsl.video_url}
+          poster={vsl.video_poster_url || undefined}
+          muted={!unmuted}
+          autoPlay
+          playsInline
+          preload="metadata"
+          controls={unmuted}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={() => trackOnce('vsl_video_complete')}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+        />
+      ) : (
+        <div
+          style={{
+            width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '24px', textAlign: 'center',
+          }}
+        >
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <rect x="2" y="4" width="20" height="16" rx="3" stroke="#3A3428" strokeWidth="1.5" strokeDasharray="3 3" />
+            <path d="M10 9l5 3-5 3V9z" fill="#3A3428" />
+          </svg>
+          <p style={{ fontSize: '12px', color: '#4A4438', margin: 0, lineHeight: 1.5 }}>
+            Paste your 9:16 video URL in<br />Admin → VSL Landing Page
+          </p>
+        </div>
+      )}
+
+      {/* Unmute overlay — the whole point of the section. */}
+      {hasVideo && !unmuted && (
+        <button
+          type="button"
+          onClick={handleUnmute}
+          aria-label={`${vsl.video_overlay_title}. ${vsl.video_overlay_cta}`}
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%',
+            border: 'none', background: 'rgba(0,0,0,0.12)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px',
+          }}
+        >
+          <span
+            className="vsl-unmute"
+            style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px',
+              background: 'rgba(214,40,29,0.92)', padding: '18px 22px', borderRadius: '6px',
+              width: '100%', maxWidth: '320px',
+              boxShadow: '0 10px 40px -8px rgba(0,0,0,0.7)',
+            }}
+          >
+            <span style={{ color: '#fff', fontSize: '16px', fontWeight: 700, lineHeight: 1.25, textAlign: 'center' }}>
+              {vsl.video_overlay_title}
+            </span>
+            <svg width="46" height="46" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M11 5L6 9H3v6h3l5 4V5z" fill="#fff" />
+              <path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" opacity="0.85" />
+              <path d="M3 3l18 18" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <span style={{ color: '#fff', fontSize: '17px', fontWeight: 700 }}>
+              {vsl.video_overlay_cta}
+            </span>
+          </span>
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── Testimonial card ─────────────────────────────────────────────────────────
+
+interface Testimonial {
+  name: string;
+  metric: string;
+  subtitle: string;
+  body: string;
+  videoUrl: string;
+  posterUrl: string;
+}
+
+function TestimonialCard({ t }: { t: Testimonial }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  function play() {
+    const v = ref.current;
+    if (!v) return;
+    v.muted = false;
+    void v.play().catch(() => {});
+    setPlaying(true);
+  }
+
+  return (
+    <div
+      className="vsl-card"
+      style={{
+        background: CARD,
+        border: `1px solid ${LINE}`,
+        borderRadius: '16px',
+        padding: '22px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '14px',
+      }}
+    >
+      <h3 style={{ margin: 0, color: INK, fontSize: '21px', fontWeight: 700, lineHeight: 1.25, letterSpacing: '-0.015em' }}>
+        {t.name}
+      </h3>
+
+      <p style={{ margin: 0, color: GOLD_LT, fontSize: '27px', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.02em' }}>
+        {t.metric}
+      </p>
+
+      {t.subtitle && (
+        <p style={{ margin: 0, color: '#A9873F', fontSize: '15px', fontWeight: 600, lineHeight: 1.35 }}>
+          {t.subtitle}
+        </p>
+      )}
+
+      {t.body && (
+        <p style={{ margin: 0, color: '#9A9A9A', fontSize: '15px', lineHeight: 1.68 }}>
+          {t.body}
+        </p>
+      )}
+
+      {(t.videoUrl || t.posterUrl) && (
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            aspectRatio: '16 / 10',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            background: '#000',
+            border: `1px solid ${LINE}`,
+            marginTop: '2px',
+          }}
+        >
+          {t.videoUrl ? (
+            <video
+              ref={ref}
+              src={t.videoUrl}
+              poster={t.posterUrl || undefined}
+              playsInline
+              preload="metadata"
+              controls={playing}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={t.posterUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          )}
+
+          {t.videoUrl && !playing && (
+            <button
+              type="button"
+              onClick={play}
+              aria-label={`Play ${t.name} case study`}
+              style={{
+                position: 'absolute', inset: 0, width: '100%', height: '100%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(0,0,0,0.18)', border: 'none', cursor: 'pointer',
+              }}
+            >
+              <span
+                className="vsl-play-btn"
+                style={{
+                  width: '62px', height: '62px', borderRadius: '50%', background: 'rgba(255,255,255,0.94)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 6px 26px -4px rgba(0,0,0,0.6)',
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M8 5.5l11 6.5-11 6.5v-13z" fill="#0A0A0A" />
+                </svg>
+              </span>
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── How it works — vertical gold rail ────────────────────────────────────────
+
+interface StepItem { title: string; body: string }
+interface StepGroup { label: string; items: StepItem[] }
+
+function GoldCheck() {
+  return (
+    <span
+      style={{
+        position: 'relative',
+        zIndex: 1,
+        flexShrink: 0,
+        width: '38px',
+        height: '38px',
+        borderRadius: '9px',
+        background: `linear-gradient(145deg, ${GOLD_LT}, #B98C33)`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: `0 0 18px -2px rgba(212,168,83,0.45)`,
+      }}
+    >
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M20 6L9 17l-5-5" stroke="#161206" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
+  );
+}
+
+function HowItWorks({ vsl, groups }: { vsl: VSLConfig; groups: StepGroup[] }) {
+  return (
+    <section style={{ padding: '64px 20px 56px', borderTop: `1px solid ${LINE}` }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+        <p
+          style={{
+            margin: 0, textAlign: 'center', color: GOLD, fontSize: '12px',
+            fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
+          }}
+        >
+          {vsl.how_eyebrow}
+        </p>
+
+        <h2
+          style={{
+            margin: '14px 0 0', textAlign: 'center', color: INK,
+            fontSize: 'clamp(28px, 7vw, 40px)', fontWeight: 800, lineHeight: 1.12, letterSpacing: '-0.03em',
+          }}
+        >
+          {vsl.how_headline}{' '}
+          <span style={{ color: GOLD_LT, display: 'inline-block' }}>{vsl.how_headline_accent}</span>
+        </h2>
+
+        {vsl.how_subtext && (
+          <p style={{ margin: '16px auto 0', maxWidth: '520px', textAlign: 'center', color: MUTED, fontSize: '16px', lineHeight: 1.6 }}>
+            {vsl.how_subtext}
+          </p>
+        )}
+
+        {/* The rail */}
+        <div style={{ position: 'relative', marginTop: '44px', paddingLeft: '4px' }}>
+          <div
+            aria-hidden="true"
+            style={{
+              position: 'absolute', left: '22px', top: '8px', bottom: '8px', width: '2px',
+              background: `linear-gradient(180deg, ${GOLD} 0%, rgba(212,168,83,0.35) 100%)`,
+            }}
+          />
+
+          {groups.map((g) => (
+            <div key={g.label} style={{ position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', margin: '0 0 22px', paddingLeft: '42px' }}>
+                <span
+                  style={{
+                    position: 'relative', zIndex: 1,
+                    background: 'rgba(212,168,83,0.09)',
+                    border: `1px solid rgba(212,168,83,0.42)`,
+                    color: GOLD_LT, fontSize: '11.5px', fontWeight: 700,
+                    letterSpacing: '0.13em', textTransform: 'uppercase',
+                    padding: '8px 16px', borderRadius: '9999px',
+                  }}
+                >
+                  {g.label}
+                </span>
+              </div>
+
+              {g.items.map((it) => (
+                <div key={it.title} style={{ display: 'flex', gap: '18px', marginBottom: '30px' }}>
+                  <GoldCheck />
+                  <div style={{ paddingTop: '1px' }}>
+                    <h4 style={{ margin: 0, color: INK, fontSize: '18.5px', fontWeight: 700, lineHeight: 1.3, letterSpacing: '-0.015em' }}>
+                      {it.title}
+                    </h4>
+                    <p style={{ margin: '7px 0 0', color: '#8F8F8F', fontSize: '15px', lineHeight: 1.62 }}>
+                      {it.body}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Footer ───────────────────────────────────────────────────────────────────
+
+function Footer({ vsl }: { vsl: VSLConfig }) {
+  const year = new Date().getFullYear();
+  return (
+    <footer style={{ borderTop: `1px solid ${LINE}`, padding: '40px 20px 52px', background: '#050505' }}>
+      <div style={{ maxWidth: '640px', margin: '0 auto', textAlign: 'center' }}>
+        <p style={{ margin: 0, color: GOLD_LT, fontSize: '15px', fontWeight: 700, letterSpacing: '-0.01em' }}>
+          {vsl.footer_company}
+        </p>
+
+        <p style={{ margin: '16px 0 0', color: '#5E5E5E', fontSize: '12.5px', lineHeight: 1.7 }}>
+          {vsl.footer_disclaimer}
+        </p>
+
+        <div style={{ marginTop: '20px', display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          {vsl.footer_privacy_url && (
+            <a href={vsl.footer_privacy_url} style={{ color: '#7A7A7A', fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Privacy Policy
+            </a>
+          )}
+          {vsl.footer_terms_url && (
+            <a href={vsl.footer_terms_url} style={{ color: '#7A7A7A', fontSize: '13px', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+              Terms
+            </a>
+          )}
+        </div>
+
+        <p style={{ margin: '22px 0 0', color: '#3D3D3D', fontSize: '12px' }}>
+          © {year} {vsl.footer_company}. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  );
+}
 
 // ─── Progress Bar ─────────────────────────────────────────────────────────────
 
@@ -242,6 +591,7 @@ function ArrowBtn({ onClick, disabled, label = 'Continue' }: { onClick: () => vo
   );
 }
 
+
 // ─── Multi-Step Form ──────────────────────────────────────────────────────────
 
 function MultiStepForm({ ctaText = 'Book My Free Strategy Call →' }: { ctaText?: string }) {
@@ -259,7 +609,10 @@ function MultiStepForm({ ctaText = 'Book My Free Strategy Call →' }: { ctaText
     phone: '',
   });
 
+  useEffect(() => { trackOnce('vsl_form_start'); }, []);
+
   const navigate = useCallback((toStep: number, dir: 'forward' | 'back') => {
+    track('vsl_form_step', { step: toStep });
     setDirection(dir);
     setAnimKey((k) => k + 1);
     setStep(toStep);
@@ -286,6 +639,7 @@ function MultiStepForm({ ctaText = 'Book My Free Strategy Call →' }: { ctaText
 
   async function handleSubmit() {
     setSubmitting(true);
+    track('vsl_form_submit');
     // TODO: Replace console.log with Supabase insert to 'offer_leads' table
     console.log('[offer_lead]', data);
     if (typeof window !== 'undefined') {
@@ -503,81 +857,13 @@ function MultiStepForm({ ctaText = 'Book My Free Strategy Call →' }: { ctaText
   );
 }
 
-// ─── Client Result Card ───────────────────────────────────────────────────────
-
-function ClientResultCard({ name, location, before, after, highlight }: (typeof CLIENT_RESULTS)[0]) {
-  return (
-    <div
-      style={{
-        background: '#141414',
-        border: '1px solid #1F1F1F',
-        borderLeft: '3px solid #D4A853',
-        borderRadius: '12px',
-        padding: '24px',
-        minWidth: '280px',
-        flex: '0 0 auto',
-        width: 'clamp(280px, 80vw, 340px)',
-      }}
-    >
-      <div style={{ marginBottom: '16px' }}>
-        <p style={{ color: '#F5F5F5', fontWeight: 700, fontSize: '15px', margin: '0 0 2px' }}>{name}</p>
-        <p style={{ color: '#555', fontSize: '12px', margin: 0 }}>{location}</p>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-        <div style={{ background: '#0F0F0F', borderRadius: '8px', padding: '12px' }}>
-          <p style={{ color: '#555', fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px' }}>Before</p>
-          <p style={{ color: '#777', fontSize: '13px', margin: 0 }}>{before}</p>
-        </div>
-        <div style={{ background: 'rgba(212,168,83,0.06)', border: '1px solid rgba(212,168,83,0.15)', borderRadius: '8px', padding: '12px' }}>
-          <p style={{ color: '#D4A853', fontSize: '10px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', margin: '0 0 4px' }}>After Monotising</p>
-          <p style={{ color: '#F5F5F5', fontSize: '13px', margin: 0 }}>{after}</p>
-        </div>
-      </div>
-
-      <p style={{ color: '#4CAF50', fontSize: '13px', fontWeight: 600, margin: 0 }}>✓ {highlight}</p>
-    </div>
-  );
-}
-
-// ─── Testimonial Placeholder ──────────────────────────────────────────────────
-
-function TestimonialPlaceholder({ label }: { label: string }) {
-  return (
-    <div
-      style={{
-        background: '#141414',
-        border: '1px solid #1F1F1F',
-        borderRadius: '12px',
-        height: '200px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '8px',
-        minWidth: '200px',
-        flex: '0 0 auto',
-        width: 'clamp(200px, 60vw, 240px)',
-      }}
-    >
-      {/* TODO: Replace with actual DM screenshot images */}
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <rect x="2" y="2" width="24" height="24" rx="4" stroke="#333" strokeWidth="1.5" strokeDasharray="4 3" />
-        <circle cx="10" cy="11" r="2" fill="#333" />
-        <path d="M3 21l6-5 4 4 3-2.5 7 5.5" stroke="#333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-      <span style={{ fontSize: '11px', color: '#444' }}>{label}</span>
-    </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function OfferPage() {
-  const formRef = useRef<HTMLDivElement>(null);
   const [vsl, setVsl] = useState<VSLConfig>(defaultVSL());
 
   useEffect(() => {
+    trackOnce('vsl_page_view');
     fetch('/api/config')
       .then((r) => r.json())
       .then(({ configs }) => {
@@ -586,105 +872,179 @@ export default function OfferPage() {
       .catch(() => {});
   }, []);
 
-  const results = [
-    { id: 1, name: vsl.result1_name, location: vsl.result1_location, before: vsl.result1_before, after: vsl.result1_after, highlight: vsl.result1_highlight },
-    { id: 2, name: vsl.result2_name, location: vsl.result2_location, before: vsl.result2_before, after: vsl.result2_after, highlight: vsl.result2_highlight },
-    { id: 3, name: vsl.result3_name, location: vsl.result3_location, before: vsl.result3_before, after: vsl.result3_after, highlight: vsl.result3_highlight },
-  ];
+  const testimonials: Testimonial[] = ([1, 2, 3] as const)
+    .map((n) => ({
+      name: vsl[`t${n}_name`],
+      metric: vsl[`t${n}_metric`],
+      subtitle: vsl[`t${n}_subtitle`],
+      body: vsl[`t${n}_body`],
+      videoUrl: vsl[`t${n}_video_url`],
+      posterUrl: vsl[`t${n}_poster_url`],
+    }))
+    .filter((t) => t.name || t.metric);
 
-  function scrollToForm() {
-    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }
+  const stepGroups: StepGroup[] = ([1, 2, 3] as const)
+    .map((n) => ({
+      label: vsl[`step${n}_label`],
+      items: ([1, 2, 3] as const)
+        .map((m) => ({ title: vsl[`step${n}_item${m}_title`], body: vsl[`step${n}_item${m}_body`] }))
+        .filter((it) => it.title.trim()),
+    }))
+    .filter((g) => g.label.trim() && g.items.length > 0);
 
   return (
-    <>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#000',
+        color: INK,
+        fontFamily: "'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+        WebkitFontSmoothing: 'antialiased',
+      }}
+    >
       <style dangerouslySetInnerHTML={{ __html: GLOBAL_STYLES }} />
-      <div style={{ minHeight: '100vh', background: '#0A0A0A', color: '#F5F5F5', fontFamily: '-apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif' }}>
 
-        {/* ── Section 1: Hero + Form ──────────────────────────────────────────── */}
-        <section style={{ padding: '48px 20px 64px', textAlign: 'center' }}>
-          <div style={{ marginBottom: '32px', animation: 'fadeUp 0.5s ease-out both' }}>
-            {/* TODO: Replace with actual Monotising logo image */}
-            <span style={{ fontSize: '13px', letterSpacing: '0.22em', textTransform: 'uppercase', color: '#D4A853', fontWeight: 600 }}>
-              Monotising
+      {/* ── Hero + VSL ───────────────────────────────────────────────── */}
+      <section
+        style={{
+          padding: '34px 20px 44px',
+          background: 'radial-gradient(120% 70% at 50% 0%, #161208 0%, #000 62%)',
+        }}
+      >
+        <div style={{ maxWidth: '520px', margin: '0 auto', textAlign: 'center' }}>
+          {vsl.hero_badge && (
+            <span
+              className="reveal"
+              style={{
+                display: 'inline-block',
+                border: `1px solid rgba(212,168,83,0.38)`,
+                background: 'rgba(212,168,83,0.07)',
+                color: GOLD_LT,
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                padding: '9px 18px',
+                borderRadius: '9999px',
+              }}
+            >
+              {vsl.hero_badge}
             </span>
-          </div>
+          )}
 
-          <div style={{ maxWidth: '600px', margin: '0 auto 16px', animation: 'fadeUp 0.5s 0.1s ease-out both' }}>
-            <h1 style={{ fontSize: 'clamp(30px, 6vw, 52px)', fontWeight: 800, lineHeight: 1.1, letterSpacing: '-0.03em', color: '#F5F5F5', margin: 0 }}>
-              {vsl.hero_headline}
-            </h1>
-          </div>
-
-          <p style={{ fontSize: '16px', color: '#4CAF50', fontWeight: 600, marginBottom: '40px', animation: 'fadeUp 0.5s 0.2s ease-out both', letterSpacing: '0.01em' }}>
-            {vsl.hero_subheadline}
-          </p>
-
-          <div ref={formRef} style={{ animation: 'fadeUp 0.5s 0.3s ease-out both' }}>
-            <MultiStepForm ctaText={vsl.hero_cta_text} />
-          </div>
-
-          <p style={{ fontSize: '12px', color: '#444', marginTop: '16px' }}>{vsl.hero_tagline}</p>
-        </section>
-
-        {/* ── Section 2: Risk Reversal ───────────────────────────────────────── */}
-        <section style={{ padding: '72px 20px', background: 'linear-gradient(180deg, #0A0A0A 0%, #0D0D0D 50%, #0A0A0A 100%)', textAlign: 'center', borderTop: '1px solid #131313', borderBottom: '1px solid #131313' }}>
-          <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-            <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '20px' }}>Our Guarantee</p>
-            <h2 style={{ fontSize: 'clamp(26px, 5vw, 42px)', fontWeight: 800, color: '#F5F5F5', lineHeight: 1.15, letterSpacing: '-0.025em', marginBottom: '20px' }}>
-              {vsl.risk_headline}
-            </h2>
-            <p style={{ fontSize: 'clamp(16px, 3vw, 20px)', color: '#4CAF50', fontWeight: 600, lineHeight: 1.5, margin: 0 }}>
-              {vsl.risk_body}
-            </p>
-          </div>
-        </section>
-
-        {/* ── Section 3: Client Results ──────────────────────────────────────── */}
-        <section style={{ padding: '72px 0 40px' }}>
-          <div style={{ textAlign: 'center', padding: '0 20px', marginBottom: '40px' }}>
-            <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '12px' }}>Real Results</p>
-            <h2 style={{ fontSize: 'clamp(22px, 4vw, 34px)', fontWeight: 800, color: '#F5F5F5', lineHeight: 1.2, letterSpacing: '-0.02em', maxWidth: '520px', margin: '0 auto' }}>
-              {vsl.proof_headline}
-            </h2>
-          </div>
-          <div className="offer-scroll" style={{ display: 'flex', gap: '16px', overflowX: 'auto', padding: '0 20px 20px' }}>
-            {results.map((r) => <ClientResultCard key={r.id} {...r} />)}
-          </div>
-        </section>
-
-        {/* ── Section 4: Testimonials ────────────────────────────────────────── */}
-        <section style={{ padding: '40px 0 72px' }}>
-          <div style={{ textAlign: 'center', padding: '0 20px', marginBottom: '28px' }}>
-            <p style={{ color: '#AAAAAA', fontSize: '15px' }}>Don't take our word for it — here's what clients say</p>
-          </div>
-          <div className="offer-scroll" style={{ display: 'flex', gap: '12px', overflowX: 'auto', padding: '0 20px 8px' }}>
-            <TestimonialPlaceholder label="DM screenshot 1" />
-            <TestimonialPlaceholder label="DM screenshot 2" />
-            <TestimonialPlaceholder label="DM screenshot 3" />
-            <TestimonialPlaceholder label="DM screenshot 4" />
-          </div>
-          {/* TODO: Add video testimonial embeds here */}
-        </section>
-
-        {/* ── Bottom CTA ─────────────────────────────────────────────────────── */}
-        <section style={{ padding: '56px 20px', textAlign: 'center', background: '#0D0D0D', borderTop: '1px solid #131313' }}>
-          <p style={{ color: '#AAAAAA', fontSize: '16px', marginBottom: '24px', lineHeight: 1.5 }}>
-            Ready to see if we're the right fit for your clinic?
-          </p>
-          <button
-            type="button"
-            onClick={scrollToForm}
-            style={{ padding: '16px 40px', borderRadius: '10px', fontSize: '16px', fontWeight: 700, border: 'none', background: '#D4A853', color: '#000', cursor: 'pointer', width: '100%', maxWidth: '360px', transition: 'opacity 0.15s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+          <h1
+            className="reveal"
+            style={{
+              margin: '22px 0 0',
+              fontSize: 'clamp(30px, 8vw, 46px)',
+              fontWeight: 800,
+              lineHeight: 1.08,
+              letterSpacing: '-0.035em',
+              color: INK,
+            }}
           >
-            See If We're A Fit →
-          </button>
-          <p style={{ fontSize: '12px', color: '#444', marginTop: '12px' }}>Free 20-minute call · No obligation · No hard sell</p>
-        </section>
+            {vsl.hero_headline}
+          </h1>
 
-      </div>
-    </>
+          {vsl.hero_subheadline && (
+            <p style={{ margin: '18px auto 0', maxWidth: '420px', color: '#A5A5A5', fontSize: '17px', lineHeight: 1.5 }}>
+              {vsl.hero_subheadline}
+            </p>
+          )}
+
+          {(vsl.hero_pill_1 || vsl.hero_pill_2) && (
+            <div style={{ marginTop: '22px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+              {[vsl.hero_pill_1, vsl.hero_pill_2].filter(Boolean).map((p) => (
+                <span
+                  key={p}
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '9px',
+                    background: 'rgba(212,168,83,0.1)',
+                    border: `1px solid rgba(212,168,83,0.42)`,
+                    color: GOLD_LT, fontSize: '14.5px', fontWeight: 700,
+                    padding: '10px 20px', borderRadius: '9999px',
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M20 6L9 17l-5-5" stroke={GOLD_LT} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  {p}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* The main event */}
+        <div style={{ marginTop: '32px' }}>
+          <VerticalVSL vsl={vsl} />
+        </div>
+      </section>
+
+      {/* ── Lead form ────────────────────────────────────────────────── */}
+      <section style={{ padding: '8px 20px 60px' }}>
+        {vsl.form_headline && (
+          <h2
+            style={{
+              maxWidth: '480px', margin: '0 auto 22px', textAlign: 'center', color: INK,
+              fontSize: 'clamp(22px, 5.5vw, 28px)', fontWeight: 800, lineHeight: 1.18, letterSpacing: '-0.025em',
+            }}
+          >
+            {vsl.form_headline}
+          </h2>
+        )}
+        <MultiStepForm ctaText={vsl.hero_cta_text} />
+        {vsl.hero_tagline && (
+          <p style={{ margin: '18px auto 0', textAlign: 'center', color: '#5A5A5A', fontSize: '13px' }}>
+            {vsl.hero_tagline}
+          </p>
+        )}
+      </section>
+
+      {/* ── Client results ───────────────────────────────────────────── */}
+      {testimonials.length > 0 && (
+        <section style={{ padding: '58px 20px 54px', borderTop: `1px solid ${LINE}`, background: '#030303' }}>
+          <div style={{ maxWidth: '640px', margin: '0 auto' }}>
+            {vsl.proof_eyebrow && (
+              <p
+                style={{
+                  margin: 0, textAlign: 'center', color: GOLD, fontSize: '12px',
+                  fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase',
+                }}
+              >
+                {vsl.proof_eyebrow}
+              </p>
+            )}
+            {vsl.proof_headline && (
+              <h2
+                style={{
+                  margin: '14px 0 36px', textAlign: 'center', color: INK,
+                  fontSize: 'clamp(26px, 6.5vw, 36px)', fontWeight: 800, lineHeight: 1.14, letterSpacing: '-0.03em',
+                }}
+              >
+                {vsl.proof_headline}
+              </h2>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {testimonials.map((t) => (
+                <TestimonialCard key={t.name} t={t} />
+              ))}
+            </div>
+
+            {vsl.proof_disclaimer && (
+              <p style={{ margin: '32px auto 0', maxWidth: '540px', textAlign: 'center', color: '#5A5A5A', fontSize: '13px', lineHeight: 1.65 }}>
+                {vsl.proof_disclaimer}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* ── How it works ─────────────────────────────────────────────── */}
+      {stepGroups.length > 0 && <HowItWorks vsl={vsl} groups={stepGroups} />}
+
+      <Footer vsl={vsl} />
+    </div>
   );
 }

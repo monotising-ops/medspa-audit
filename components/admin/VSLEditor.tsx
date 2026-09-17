@@ -12,12 +12,14 @@ function TextField({
   onChange,
   placeholder,
   multiline,
+  hint,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   multiline?: boolean;
+  hint?: string;
 }) {
   const base: React.CSSProperties = {
     width: '100%',
@@ -30,50 +32,21 @@ function TextField({
     outline: 'none',
     fontFamily: 'inherit',
     resize: multiline ? 'vertical' : undefined,
-    minHeight: multiline ? '80px' : undefined,
+    minHeight: multiline ? '96px' : undefined,
+    lineHeight: multiline ? 1.6 : undefined,
   };
   return (
     <div>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#a1a1aa', marginBottom: '6px' }}>{label}</label>
+      <label style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#a1a1aa', marginBottom: '6px' }}>
+        {label}
+      </label>
       {multiline ? (
         <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={base} />
       ) : (
         <input type="text" value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} style={base} />
       )}
+      {hint && <p style={{ fontSize: '11px', color: '#4a4a4a', margin: '5px 0 0', lineHeight: 1.5 }}>{hint}</p>}
     </div>
-  );
-}
-
-function SectionTitle({ title, sub }: { title: string; sub?: string }) {
-  return (
-    <div style={{ marginBottom: '16px' }}>
-      <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#525252', margin: 0 }}>{title}</p>
-      {sub && <p style={{ fontSize: '12px', color: '#444', marginTop: '4px' }}>{sub}</p>}
-    </div>
-  );
-}
-
-function SaveBtn({ onClick, saving }: { onClick: () => void; saving: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={saving}
-      style={{
-        marginTop: '8px',
-        padding: '10px 20px',
-        borderRadius: '8px',
-        fontSize: '13px',
-        fontWeight: 600,
-        border: 'none',
-        background: saving ? '#1e1e1e' : '#3b82f6',
-        color: saving ? '#525252' : '#fff',
-        cursor: saving ? 'not-allowed' : 'pointer',
-        transition: 'background 0.15s',
-      }}
-    >
-      {saving ? 'Saving…' : 'Save Changes'}
-    </button>
   );
 }
 
@@ -81,6 +54,46 @@ function Card({ children }: { children: React.ReactNode }) {
   return (
     <div style={{ background: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
       {children}
+    </div>
+  );
+}
+
+function Section({
+  title,
+  sub,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  sub?: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ border: '1px solid #171717', borderRadius: '14px', overflow: 'hidden', background: '#080808' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '12px', padding: '15px 18px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left',
+        }}
+      >
+        <span>
+          <span style={{ display: 'block', fontSize: '11px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#D4A853' }}>
+            {title}
+          </span>
+          {sub && <span style={{ display: 'block', fontSize: '12px', color: '#525252', marginTop: '4px' }}>{sub}</span>}
+        </span>
+        <svg
+          width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+          style={{ flexShrink: 0, color: '#525252', transform: open ? 'rotate(180deg)' : undefined, transition: 'transform .18s' }}
+        >
+          <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+      {open && <div style={{ padding: '0 18px 18px', display: 'flex', flexDirection: 'column', gap: '16px' }}>{children}</div>}
     </div>
   );
 }
@@ -115,103 +128,134 @@ export default function VSLEditor({ config, onSave }: Props) {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', maxWidth: '720px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '760px', paddingBottom: '80px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', marginBottom: '4px' }}>
+        <p style={{ margin: 0, fontSize: '13px', color: '#737373' }}>
+          Everything on <span style={{ color: '#D4A853', fontWeight: 600 }}>/offer</span>, top to bottom.
+        </p>
+        <a href="/offer" target="_blank" rel="noreferrer" style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+          Preview page ↗
+        </a>
+      </div>
 
-      {/* Hero Section */}
-      <div>
-        <SectionTitle title="Hero Section" sub="The headline and CTA at the top of /offer" />
+      {/* 1 ── Hero */}
+      <Section title="1 · Hero" sub="Badge, headline and the two proof pills above the video" defaultOpen>
+        <Card>
+          <TextField label="Badge pill (small uppercase, top of page)" value={local.hero_badge} onChange={(v) => set('hero_badge', v)} />
+          <TextField label="Main headline" value={local.hero_headline} onChange={(v) => set('hero_headline', v)} multiline />
+          <TextField label="Subheadline" value={local.hero_subheadline} onChange={(v) => set('hero_subheadline', v)} hint="Keep it pointing at the video — that is the job of this line." />
+          <TextField label="Proof pill 1" value={local.hero_pill_1} onChange={(v) => set('hero_pill_1', v)} />
+          <TextField label="Proof pill 2" value={local.hero_pill_2} onChange={(v) => set('hero_pill_2', v)} hint="Leave blank to hide." />
+        </Card>
+      </Section>
+
+      {/* 2 ── Video */}
+      <Section title="2 · Vertical VSL" sub="The 9:16 video and its unmute overlay" defaultOpen>
         <Card>
           <TextField
-            label="Main Headline"
-            value={local.hero_headline}
-            onChange={(v) => set('hero_headline', v)}
-            placeholder="Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads"
+            label="Video URL (9:16 vertical MP4)"
+            value={local.video_url}
+            onChange={(v) => set('video_url', v)}
+            placeholder="https://your-cdn.b-cdn.net/vsl.mp4"
+            hint="Direct MP4 link. Use a video CDN (Bunny Stream, Cloudflare Stream) — not Supabase Storage, which caps at ~250 views a month on the free tier. Leave blank to show a placeholder."
           />
           <TextField
-            label="Subheadline (gold accent text below headline)"
-            value={local.hero_subheadline}
-            onChange={(v) => set('hero_subheadline', v)}
-            placeholder="Only pay when patients actually book."
+            label="Poster image URL"
+            value={local.video_poster_url}
+            onChange={(v) => set('video_poster_url', v)}
+            hint="First frame shown before playback. Strongly recommended — it is the thumbnail people decide on."
           />
+          <TextField label="Overlay title (red box)" value={local.video_overlay_title} onChange={(v) => set('video_overlay_title', v)} />
           <TextField
-            label="CTA Button Text"
-            value={local.hero_cta_text}
-            onChange={(v) => set('hero_cta_text', v)}
-            placeholder="Book My Free Strategy Call →"
-          />
-          <TextField
-            label="Tagline below form (small muted text)"
-            value={local.hero_tagline}
-            onChange={(v) => set('hero_tagline', v)}
-            placeholder="Takes 60 seconds · No credit card · Free strategy call"
+            label="Overlay call-to-action"
+            value={local.video_overlay_cta}
+            onChange={(v) => set('video_overlay_cta', v)}
+            hint="Clicking the overlay restarts the video from 0:00 with sound and goes fullscreen."
           />
         </Card>
-      </div>
+      </Section>
 
-      {/* Risk Reversal */}
-      <div>
-        <SectionTitle title="Risk Reversal Section" sub="The guarantee section below the form" />
+      {/* 3 ── Form */}
+      <Section title="3 · Lead form" sub="Sits directly under the video">
         <Card>
-          <TextField
-            label="Headline"
-            value={local.risk_headline}
-            onChange={(v) => set('risk_headline', v)}
-            placeholder="We put our money where our mouth is."
-          />
-          <TextField
-            label="Body Text (shown in green)"
-            value={local.risk_body}
-            onChange={(v) => set('risk_body', v)}
-            multiline
-            placeholder="If we don't deliver real, booked appointments for your clinic — you don't pay."
-          />
+          <TextField label="Headline above the form" value={local.form_headline} onChange={(v) => set('form_headline', v)} hint="Leave blank to hide." />
+          <TextField label="Submit button text" value={local.hero_cta_text} onChange={(v) => set('hero_cta_text', v)} />
+          <TextField label="Reassurance line below the form" value={local.hero_tagline} onChange={(v) => set('hero_tagline', v)} />
+          <TextField label="Calendly URL" value={local.calendly_url} onChange={(v) => set('calendly_url', v)} placeholder="https://calendly.com/your-link" hint="Used on /offer/booked after submission." />
         </Card>
-      </div>
+      </Section>
 
-      {/* Calendly */}
-      <div>
-        <SectionTitle title="Calendly URL" sub="Shown on /offer/booked after form submission" />
+      {/* 4 ── Client results */}
+      <Section title="4 · Client results" sub="The three black-and-gold case study cards">
         <Card>
-          <TextField
-            label="Calendly Link"
-            value={local.calendly_url}
-            onChange={(v) => set('calendly_url', v)}
-            placeholder="https://calendly.com/your-link-here"
-          />
+          <TextField label="Section eyebrow" value={local.proof_eyebrow} onChange={(v) => set('proof_eyebrow', v)} />
+          <TextField label="Section headline" value={local.proof_headline} onChange={(v) => set('proof_headline', v)} />
         </Card>
-      </div>
 
-      {/* Social Proof headline */}
-      <div>
-        <SectionTitle title="Social Proof Headline" sub="Above the client result cards" />
+        {([1, 2, 3] as const).map((n) => (
+          <Card key={n}>
+            <p style={{ fontSize: '12px', fontWeight: 700, color: '#D4A853', margin: 0 }}>Card {n}</p>
+            <TextField label="Client / clinic name" value={local[`t${n}_name`]} onChange={(v) => set(`t${n}_name`, v)} placeholder="Aman & Niel | Med Spa" />
+            <TextField label="Headline metric (large gold text)" value={local[`t${n}_metric`]} onChange={(v) => set(`t${n}_metric`, v)} placeholder="+$17.7K Collected" />
+            <TextField label="Qualifier under the metric" value={local[`t${n}_subtitle`]} onChange={(v) => set(`t${n}_subtitle`, v)} placeholder="On Half The Ad Spend" />
+            <TextField label="Story paragraph" value={local[`t${n}_body`]} onChange={(v) => set(`t${n}_body`, v)} multiline />
+            <TextField label="Case study video URL (optional)" value={local[`t${n}_video_url`]} onChange={(v) => set(`t${n}_video_url`, v)} />
+            <TextField label="Video poster URL (optional)" value={local[`t${n}_poster_url`]} onChange={(v) => set(`t${n}_poster_url`, v)} hint="A poster with no video URL renders as a still image. Leave both blank to hide the media area. Clear the name and metric to hide the whole card." />
+          </Card>
+        ))}
+
         <Card>
-          <TextField
-            label="Section Headline"
-            value={local.proof_headline}
-            onChange={(v) => set('proof_headline', v)}
-            placeholder="See why clinics across the US and Canada trust Monotising"
-          />
+          <TextField label="Results disclaimer" value={local.proof_disclaimer} onChange={(v) => set('proof_disclaimer', v)} multiline hint="Shown under the cards. Keep this — it is your earnings-claim cover." />
         </Card>
-      </div>
+      </Section>
 
-      {/* Client Result Cards */}
-      <div>
-        <SectionTitle title="Client Result Cards" sub="The 3 before/after cards in the social proof section" />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {([1, 2, 3] as const).map((n) => (
-            <Card key={n}>
-              <p style={{ fontSize: '12px', fontWeight: 600, color: '#D4A853', margin: 0 }}>Card {n}</p>
-              <TextField label="Client / Clinic Name" value={local[`result${n}_name`]} onChange={(v) => set(`result${n}_name`, v)} placeholder="Aman & Niel's Med Spa" />
-              <TextField label="Location" value={local[`result${n}_location`]} onChange={(v) => set(`result${n}_location`, v)} placeholder="Local Market" />
-              <TextField label="Before (shown muted)" value={local[`result${n}_before`]} onChange={(v) => set(`result${n}_before`, v)} placeholder="$7,800 adspend · 1.26× ROAS" />
-              <TextField label="After Monotising (shown in gold)" value={local[`result${n}_after`]} onChange={(v) => set(`result${n}_after`, v)} placeholder="$4,060 adspend · 4.43× ROAS · $17,700+ collected" />
-              <TextField label="Highlight (shown in green, with ✓)" value={local[`result${n}_highlight`]} onChange={(v) => set(`result${n}_highlight`, v)} placeholder="71 confirmed bookings in one month" />
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* 5 ── How it works */}
+      <Section title="5 · How it works" sub="The gold step rail near the bottom of the page">
+        <Card>
+          <TextField label="Eyebrow" value={local.how_eyebrow} onChange={(v) => set('how_eyebrow', v)} />
+          <TextField label="Headline (white part)" value={local.how_headline} onChange={(v) => set('how_headline', v)} placeholder="The System Behind" />
+          <TextField label="Headline (gold part)" value={local.how_headline_accent} onChange={(v) => set('how_headline_accent', v)} placeholder="Fully Booked Clinics" />
+          <TextField label="Subtext" value={local.how_subtext} onChange={(v) => set('how_subtext', v)} multiline />
+        </Card>
 
-      <SaveBtn onClick={handleSave} saving={saving} />
+        {([1, 2, 3] as const).map((n) => (
+          <Card key={n}>
+            <TextField label={`Step ${n} label`} value={local[`step${n}_label`]} onChange={(v) => set(`step${n}_label`, v)} placeholder={`STEP ${n} — DIAGNOSE`} hint="Clear this to hide the whole step." />
+            {([1, 2, 3] as const).map((m) => (
+              <div key={m} style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingLeft: '12px', borderLeft: '2px solid #1a1a1a' }}>
+                <TextField label={`Item ${m} — title`} value={local[`step${n}_item${m}_title`]} onChange={(v) => set(`step${n}_item${m}_title`, v)} hint={m === 3 ? 'Blank titles are skipped, so a step can have 1, 2 or 3 items.' : undefined} />
+                <TextField label={`Item ${m} — body`} value={local[`step${n}_item${m}_body`]} onChange={(v) => set(`step${n}_item${m}_body`, v)} multiline />
+              </div>
+            ))}
+          </Card>
+        ))}
+      </Section>
+
+      {/* 6 ── Footer */}
+      <Section title="6 · Footer" sub="Company line, compliance text and policy links">
+        <Card>
+          <TextField label="Company name" value={local.footer_company} onChange={(v) => set('footer_company', v)} />
+          <TextField label="Disclaimer / compliance text" value={local.footer_disclaimer} onChange={(v) => set('footer_disclaimer', v)} multiline hint="Meta requires the 'not affiliated with Facebook' language when you run ads to this page." />
+          <TextField label="Privacy Policy URL" value={local.footer_privacy_url} onChange={(v) => set('footer_privacy_url', v)} hint="Link is hidden while blank. Meta ad review does check for this." />
+          <TextField label="Terms URL" value={local.footer_terms_url} onChange={(v) => set('footer_terms_url', v)} />
+        </Card>
+      </Section>
+
+      {/* Sticky save */}
+      <div style={{ position: 'sticky', bottom: 0, paddingTop: '14px', background: 'linear-gradient(180deg, transparent, #050505 42%)' }}>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            width: '100%', padding: '13px 20px', borderRadius: '10px', fontSize: '14px', fontWeight: 700,
+            border: 'none', background: saving ? '#1e1e1e' : '#D4A853', color: saving ? '#525252' : '#0a0a0a',
+            cursor: saving ? 'not-allowed' : 'pointer', transition: 'background 0.15s',
+          }}
+        >
+          {saving ? 'Saving…' : 'Save VSL Page'}
+        </button>
+      </div>
     </div>
   );
 }

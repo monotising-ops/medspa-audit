@@ -9,6 +9,7 @@ import LeadsTable from '@/components/admin/LeadsTable';
 import SettingsPanel from '@/components/admin/SettingsPanel';
 import InfoBank from '@/components/admin/InfoBank';
 import VSLEditor from '@/components/admin/VSLEditor';
+import { defaultVSL } from '@/lib/vsl-defaults';
 import OnboardingManager from '@/components/admin/OnboardingManager';
 import ImageAdsAdmin from '@/components/admin/imageads/ImageAdsAdmin';
 import type {
@@ -208,22 +209,7 @@ export default function AdminPage() {
     calendly_url: '',
     agreement_url: '',
   });
-  const [vslConfig, setVslConfig] = useState<VSLConfig>({
-    hero_headline: 'Fill Your Med Spa Calendar With Booked Appointments — Not Just Leads',
-    hero_subheadline: 'Only pay when patients actually book.',
-    hero_cta_text: 'Book My Free Strategy Call →',
-    hero_tagline: 'Takes 60 seconds · No credit card · Free strategy call',
-    risk_headline: 'We put our money where our mouth is.',
-    risk_body: "If we don't deliver real, booked appointments for your clinic — you don't pay. That's our guarantee.",
-    proof_headline: 'See why clinics across the US and Canada trust Monotising',
-    calendly_url: '',
-    result1_name: "Aman & Niel's Med Spa", result1_location: 'Local Market',
-    result1_before: '$7,800 adspend · 1.26× ROAS', result1_after: '$4,060 adspend · 4.43× ROAS · $17,700+ collected', result1_highlight: '71 confirmed bookings in one month',
-    result2_name: 'Family-Run Med Spa', result2_location: 'New York, NY',
-    result2_before: '$3,200/mo · ~8 new patients/mo', result2_after: '$2,800/mo · 31 new patients/mo', result2_highlight: '4× new patient volume at lower spend',
-    result3_name: 'Aesthetic Clinic', result3_location: 'Toronto, ON',
-    result3_before: 'No paid advertising', result3_after: '$11,000+ in bookings in first 30 days', result3_highlight: 'First 5-figure month from a cold start',
-  });
+  const [vslConfig, setVslConfig] = useState<VSLConfig>(defaultVSL);
   const [loading, setLoading] = useState(true);
 
   const authHeaders = useCallback(() => ({
