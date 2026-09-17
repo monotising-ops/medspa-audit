@@ -246,6 +246,20 @@ export interface VSLConfig {
   footer_privacy_url: string;
   footer_terms_url: string;
 
+  // ── Thank-you page (/offer/booked) ────────────────────
+  booked_headline: string;
+  booked_headline_fallback: string;
+  booked_subtext: string;
+  booked_expect_eyebrow: string;
+  booked_expect_headline: string;
+  booked_expect1_title: string; booked_expect1_body: string;
+  booked_expect2_title: string; booked_expect2_body: string;
+  booked_expect3_title: string; booked_expect3_body: string;
+  booked_stat1_value: string; booked_stat1_label: string;
+  booked_stat2_value: string; booked_stat2_label: string;
+  booked_stat3_value: string; booked_stat3_label: string;
+  booked_stat4_value: string; booked_stat4_label: string;
+
   // ── Retained ──────────────────────────────────────────
   calendly_url: string;
 }

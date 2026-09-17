@@ -241,6 +241,37 @@ export default function VSLEditor({ config, onSave }: Props) {
         </Card>
       </Section>
 
+      {/* 7 ── Thank-you page */}
+      <Section title="7 · Thank-you page" sub="Everything on /offer/booked after they submit">
+        <Card>
+          <TextField label="Headline (with their name)" value={local.booked_headline} onChange={(v) => set('booked_headline', v)} hint="Use {name} where their first name should appear." />
+          <TextField label="Headline (name unknown)" value={local.booked_headline_fallback} onChange={(v) => set('booked_headline_fallback', v)} />
+          <TextField label="Subtext under the headline" value={local.booked_subtext} onChange={(v) => set('booked_subtext', v)} multiline />
+        </Card>
+
+        <Card>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: '#D4A853', margin: 0 }}>&ldquo;On the call&rdquo; section</p>
+          <TextField label="Eyebrow" value={local.booked_expect_eyebrow} onChange={(v) => set('booked_expect_eyebrow', v)} />
+          <TextField label="Headline" value={local.booked_expect_headline} onChange={(v) => set('booked_expect_headline', v)} />
+          {([1, 2, 3] as const).map((n) => (
+            <div key={n} style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingLeft: '12px', borderLeft: '2px solid #1a1a1a' }}>
+              <TextField label={`Point ${n} — title`} value={local[`booked_expect${n}_title`]} onChange={(v) => set(`booked_expect${n}_title`, v)} hint={n === 3 ? 'Clear a title to hide that point.' : undefined} />
+              <TextField label={`Point ${n} — body`} value={local[`booked_expect${n}_body`]} onChange={(v) => set(`booked_expect${n}_body`, v)} multiline />
+            </div>
+          ))}
+        </Card>
+
+        <Card>
+          <p style={{ fontSize: '12px', fontWeight: 700, color: '#D4A853', margin: 0 }}>Proof stats row</p>
+          {([1, 2, 3, 4] as const).map((n) => (
+            <div key={n} style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '10px' }}>
+              <TextField label={`Stat ${n} — value`} value={local[`booked_stat${n}_value`]} onChange={(v) => set(`booked_stat${n}_value`, v)} placeholder="4.43×" />
+              <TextField label={`Stat ${n} — label`} value={local[`booked_stat${n}_label`]} onChange={(v) => set(`booked_stat${n}_label`, v)} placeholder="Avg ROAS for active clients" />
+            </div>
+          ))}
+        </Card>
+      </Section>
+
       {/* Sticky save */}
       <div style={{ position: 'sticky', bottom: 0, paddingTop: '14px', background: 'linear-gradient(180deg, transparent, #050505 42%)' }}>
         <button

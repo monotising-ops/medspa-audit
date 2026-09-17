@@ -90,6 +90,23 @@ export function defaultVSL(): VSLConfig {
     footer_privacy_url: '',
     footer_terms_url: '',
 
+    booked_headline: '{name}, one last step.',
+    booked_headline_fallback: 'One last step.',
+    booked_subtext:
+      "Pick a time below for your free 20-minute strategy call. We'll look at your current setup and show you exactly how our system works.",
+    booked_expect_eyebrow: 'On the Call',
+    booked_expect_headline: 'What to expect in 20 minutes',
+    booked_expect1_title: 'We look at your current setup',
+    booked_expect1_body: "We'll review what's working and where patients are dropping off — together, in real time.",
+    booked_expect2_title: 'We show you the exact system',
+    booked_expect2_body: "You'll see our full booking framework with real client numbers and live campaign examples.",
+    booked_expect3_title: "We figure out if there's a fit",
+    booked_expect3_body: "No pressure, no pitch deck. If there's an opportunity, we'll both know it by the end of the call.",
+    booked_stat1_value: '4.43×', booked_stat1_label: 'Avg ROAS for active clients',
+    booked_stat2_value: '71', booked_stat2_label: 'Bookings in a single month',
+    booked_stat3_value: '$17.7k', booked_stat3_label: 'Revenue from $4k adspend',
+    booked_stat4_value: '92%', booked_stat4_label: 'Lead-to-booking conversion',
+
     calendly_url: '',
   };
 }

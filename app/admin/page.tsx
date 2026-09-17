@@ -9,6 +9,7 @@ import LeadsTable from '@/components/admin/LeadsTable';
 import SettingsPanel from '@/components/admin/SettingsPanel';
 import InfoBank from '@/components/admin/InfoBank';
 import VSLEditor from '@/components/admin/VSLEditor';
+import VSLAnalytics from '@/components/admin/VSLAnalytics';
 import { defaultVSL } from '@/lib/vsl-defaults';
 import OnboardingManager from '@/components/admin/OnboardingManager';
 import ImageAdsAdmin from '@/components/admin/imageads/ImageAdsAdmin';
@@ -29,6 +30,7 @@ import type {
 
 type Tab = 'sequence' | 'questions' | 'content' | 'infobank' | 'settings';
 type View = 'medspa' | 'vsl' | 'onboarding' | 'imageads' | 'leads';
+type VslTab = 'content' | 'analytics';
 
 function LoginScreen({ onLogin }: { onLogin: (token: string) => void }) {
   const [password, setPassword] = useState('');
@@ -179,6 +181,7 @@ export default function AdminPage() {
   const [token, setToken] = useState<string | null>(null);
   const [view, setView] = useState<View>('leads');
   const [tab, setTab] = useState<Tab>('sequence');
+  const [vslTab, setVslTab] = useState<VslTab>('content');
   const [rawConfigs, setRawConfigs] = useState<Record<string, Record<string, string>>>({});
   const [questions, setQuestions] = useState<Question[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -302,6 +305,28 @@ export default function AdminPage() {
           Sign out
         </button>
       </div>
+
+      {/* VSL Landing Page sub-tabs */}
+      {view === 'vsl' && (
+        <div className="border-b border-[#1e1e1e] px-6 flex gap-0 overflow-x-auto">
+          {([
+            { id: 'content', label: 'Page Content' },
+            { id: 'analytics', label: 'Live Metrics' },
+          ] as { id: VslTab; label: string }[]).map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setVslTab(t.id)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
+                vslTab === t.id
+                  ? 'border-[#D4A847] text-white'
+                  : 'border-transparent text-[#737373] hover:text-[#f5f5f5]'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Med Spa Audit sub-tabs */}
       {view === 'medspa' && (
@@ -447,7 +472,8 @@ export default function AdminPage() {
             onRefresh={fetchAll}
           />
         )}
-        {view === 'vsl' && (
+        {view === 'vsl' && vslTab === 'analytics' && <VSLAnalytics token={token ?? ''} />}
+        {view === 'vsl' && vslTab === 'content' && (
           <VSLEditor
             config={vslConfig}
             onSave={async (c) => {

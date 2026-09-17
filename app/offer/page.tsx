@@ -231,6 +231,7 @@ function TestimonialCard({ t }: { t: Testimonial }) {
   function play() {
     const v = ref.current;
     if (!v) return;
+    trackOnce('vsl_testimonial_play', { label: t.name });
     v.muted = false;
     void v.play().catch(() => {});
     setPlaying(true);

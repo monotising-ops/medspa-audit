@@ -6,6 +6,8 @@
 // TODO: Verify form data was submitted (redirect to /offer if sessionStorage is empty)
 
 import { useEffect, useState } from 'react';
+import { defaultVSL } from '@/lib/vsl-defaults';
+import type { VSLConfig } from '@/types';
 
 const CALENDLY_FALLBACK = 'https://calendly.com/your-link-here';
 
@@ -20,31 +22,6 @@ const BOOKED_STYLES = `
     100% { transform: scale(1); opacity: 1; }
   }
 `;
-
-const WHAT_TO_EXPECT = [
-  {
-    n: '01',
-    title: 'We look at your current setup',
-    body: "We'll review what's working and where patients are dropping off — together, in real time.",
-  },
-  {
-    n: '02',
-    title: 'I show you the exact system',
-    body: 'You\'ll see our full booking framework with real client numbers and live campaign examples.',
-  },
-  {
-    n: '03',
-    title: 'We figure out if there\'s a fit',
-    body: 'No pressure, no pitch deck. If there\'s an opportunity, we\'ll both know it by the end of the call.',
-  },
-];
-
-const PROOF_STATS = [
-  { value: '4.43×', label: 'Avg ROAS for active clients' },
-  { value: '71', label: 'Bookings in a single month' },
-  { value: '$17.7k', label: 'Revenue from $4k adspend' },
-  { value: '92%', label: 'Lead-to-booking conversion' },
-];
 
 function TestimonialPlaceholder({ label }: { label: string }) {
   return (
@@ -74,16 +51,30 @@ function TestimonialPlaceholder({ label }: { label: string }) {
 
 export default function BookedPage() {
   const [name, setName] = useState('');
-  const [calendlyUrl, setCalendlyUrl] = useState(CALENDLY_FALLBACK);
+  const [vsl, setVsl] = useState<VSLConfig>(defaultVSL());
 
   useEffect(() => {
     const n = sessionStorage.getItem('offer_lead_name');
     if (n) setName(n);
     fetch('/api/config')
       .then((r) => r.json())
-      .then(({ configs }) => { if (configs?.vsl?.calendly_url) setCalendlyUrl(configs.vsl.calendly_url); })
+      .then(({ configs }) => { if (configs?.vsl) setVsl((prev) => ({ ...prev, ...configs.vsl })); })
       .catch(() => {});
   }, []);
+
+  const calendlyUrl = vsl.calendly_url || CALENDLY_FALLBACK;
+
+  const whatToExpect = ([1, 2, 3] as const)
+    .map((n, i) => ({
+      n: String(i + 1).padStart(2, '0'),
+      title: vsl[`booked_expect${n}_title`],
+      body: vsl[`booked_expect${n}_body`],
+    }))
+    .filter((x) => x.title.trim());
+
+  const proofStats = ([1, 2, 3, 4] as const)
+    .map((n) => ({ value: vsl[`booked_stat${n}_value`], label: vsl[`booked_stat${n}_label`] }))
+    .filter((x) => x.value.trim());
 
   return (
     <>
@@ -127,11 +118,11 @@ export default function BookedPage() {
             color: '#F5F5F5',
             marginBottom: '12px',
           }}>
-            {name ? `${name}, one last step.` : 'One last step.'}
+            {name ? vsl.booked_headline.replace('{name}', name) : vsl.booked_headline_fallback}
           </h1>
 
           <p style={{ fontSize: '16px', color: '#AAAAAA', maxWidth: '440px', margin: '0 auto', lineHeight: 1.6 }}>
-            Pick a time below for your free 20-minute strategy call. We'll look at your current setup and show you exactly how our system works.
+            {vsl.booked_subtext}
           </p>
         </section>
 
@@ -201,7 +192,7 @@ export default function BookedPage() {
         }}>
           <div style={{ maxWidth: '600px', margin: '0 auto' }}>
             <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.15em', textTransform: 'uppercase', fontWeight: 600, marginBottom: '12px', textAlign: 'center' }}>
-              On the Call
+              {vsl.booked_expect_eyebrow}
             </p>
             <h2 style={{
               fontSize: 'clamp(22px, 4vw, 32px)',
@@ -211,11 +202,11 @@ export default function BookedPage() {
               marginBottom: '40px',
               textAlign: 'center',
             }}>
-              What to expect in 20 minutes
+              {vsl.booked_expect_headline}
             </h2>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-              {WHAT_TO_EXPECT.map((item) => (
+              {whatToExpect.map((item) => (
                 <div
                   key={item.n}
                   style={{
@@ -258,7 +249,7 @@ export default function BookedPage() {
               gap: '12px',
               marginBottom: '48px',
             }}>
-              {PROOF_STATS.map((s) => (
+              {proofStats.map((s) => (
                 <div
                   key={s.label}
                   style={{
