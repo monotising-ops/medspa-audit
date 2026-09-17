@@ -165,6 +165,13 @@ export default function VSLEditor({ config, onSave }: Props) {
             onChange={(v) => set('video_poster_url', v)}
             hint="First frame shown before playback. Strongly recommended — it is the thumbnail people decide on."
           />
+          <TextField
+            label="Progress bar curve"
+            value={local.video_progress_curve}
+            onChange={(v) => set('video_progress_curve', v)}
+            placeholder="0.45"
+            hint="How fast the bar runs ahead of real time. 1.0 = honest and linear. 0.45 (default) shows ~48% at the 2-minute mark of a 10-minute video, then visibly slows. Lower is more aggressive; 0.1 is the floor."
+          />
           <TextField label="Overlay title (red box)" value={local.video_overlay_title} onChange={(v) => set('video_overlay_title', v)} />
           <TextField
             label="Overlay call-to-action"

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase';
 import { requireAdmin } from '@/lib/auth';
 
@@ -30,5 +31,13 @@ export async function POST(request: NextRequest) {
     .upsert(updates, { onConflict: 'section,key' });
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
+
+  // /offer is statically rendered with this config baked in, so a save has to
+  // bust it or the live page would keep serving the previous copy.
+  if (updates.some((u) => u.section === 'vsl')) {
+    revalidatePath('/offer');
+    revalidatePath('/offer/booked');
+  }
+
   return Response.json({ ok: true });
 }

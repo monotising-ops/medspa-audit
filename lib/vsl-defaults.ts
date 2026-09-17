@@ -12,6 +12,7 @@ export function defaultVSL(): VSLConfig {
 
     video_url: '',
     video_poster_url: '',
+    video_progress_curve: '0.45',
     video_overlay_title: 'Your video has already started',
     video_overlay_cta: 'Click to listen',
 

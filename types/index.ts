@@ -201,6 +201,7 @@ export interface VSLConfig {
   // ── Vertical 9:16 VSL ─────────────────────────────────
   video_url: string;
   video_poster_url: string;
+  video_progress_curve: string;
   video_overlay_title: string;
   video_overlay_cta: string;
 
