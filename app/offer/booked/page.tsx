@@ -1,6 +1,5 @@
 'use client';
 
-// TODO: Add Calendly embed — replace placeholder div with actual Calendly inline widget
 // TODO: Add Meta Pixel — fire CompleteRegistration event on mount
 // TODO: Replace placeholder testimonial containers with real screenshot images
 // TODO: Verify form data was submitted (redirect to /offer if sessionStorage is empty)
@@ -52,6 +51,7 @@ function TestimonialPlaceholder({ label }: { label: string }) {
 export default function BookedPage() {
   const [name, setName] = useState('');
   const [vsl, setVsl] = useState<VSLConfig>(defaultVSL());
+  const [configLoaded, setConfigLoaded] = useState(false);
 
   useEffect(() => {
     const n = sessionStorage.getItem('offer_lead_name');
@@ -59,10 +59,22 @@ export default function BookedPage() {
     fetch('/api/config')
       .then((r) => r.json())
       .then(({ configs }) => { if (configs?.vsl) setVsl((prev) => ({ ...prev, ...configs.vsl })); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setConfigLoaded(true));
   }, []);
 
   const calendlyUrl = vsl.calendly_url || CALENDLY_FALLBACK;
+  const hasCalendly = Boolean(vsl.calendly_url) && !calendlyUrl.includes('your-link-here');
+
+  useEffect(() => {
+    if (!hasCalendly) return;
+    const SRC = 'https://assets.calendly.com/assets/external/widget.js';
+    if (document.querySelector(`script[src="${SRC}"]`)) return;
+    const el = document.createElement('script');
+    el.src = SRC;
+    el.async = true;
+    document.body.appendChild(el);
+  }, [hasCalendly]);
 
   const whatToExpect = ([1, 2, 3] as const)
     .map((n, i) => ({
@@ -128,59 +140,49 @@ export default function BookedPage() {
 
         {/* ── Section 2: Calendly embed ────────────────────────────────────────── */}
         <section style={{ padding: '0 20px 64px', maxWidth: '760px', margin: '0 auto', animation: 'fadeUp 0.5s 0.15s ease-out both' }}>
-          {/* TODO: Replace this placeholder with actual Calendly embed script:
-              <div className="calendly-inline-widget" data-url={calendlyUrl}
-                   style="min-width:320px;height:700px;" />
-              <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async />
-          */}
-          <div style={{
-            background: '#141414',
-            border: '1px solid #1F1F1F',
-            borderRadius: '16px',
-            minHeight: '520px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '16px',
-            padding: '40px 24px',
-            textAlign: 'center',
-          }}>
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
-              <rect x="6" y="10" width="28" height="26" rx="4" stroke="#333" strokeWidth="1.8" />
-              <path d="M6 18H34" stroke="#333" strokeWidth="1.8" />
-              <path d="M14 6V12M26 6V12" stroke="#333" strokeWidth="1.8" strokeLinecap="round" />
-              <rect x="12" y="22" width="5" height="5" rx="1" fill="#D4A853" opacity="0.5" />
-              <rect x="21" y="22" width="5" height="5" rx="1" fill="#D4A853" opacity="0.3" />
-            </svg>
-            <div>
-              <p style={{ color: '#AAAAAA', fontSize: '15px', marginBottom: '4px' }}>Calendly calendar will appear here</p>
-              <p style={{ color: '#555', fontSize: '13px' }}>Paste your Calendly URL in the TODO above</p>
+          {hasCalendly ? (
+            <>
+              <div
+                className="calendly-inline-widget"
+                data-url={`${calendlyUrl}?hide_gdpr_banner=1&background_color=0a0a0a&text_color=f5f5f5&primary_color=d4a853`}
+                style={{ minWidth: '320px', height: '700px', borderRadius: '16px', overflow: 'hidden' }}
+              />
+              <p style={{ textAlign: 'center', marginTop: '14px', fontSize: '13px', color: '#555' }}>
+                Calendar not loading?{' '}
+                <a href={calendlyUrl} target="_blank" rel="noopener noreferrer" style={{ color: '#D4A853', textDecoration: 'underline', textUnderlineOffset: '3px' }}>
+                  Open it in a new tab
+                </a>
+              </p>
+            </>
+          ) : (
+            <div style={{
+              background: '#141414',
+              border: '1px solid #1F1F1F',
+              borderRadius: '16px',
+              minHeight: configLoaded ? '320px' : '700px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '14px',
+              padding: '40px 24px',
+              textAlign: 'center',
+            }}>
+              <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden="true">
+                <rect x="6" y="10" width="28" height="26" rx="4" stroke="#333" strokeWidth="1.8" />
+                <path d="M6 18H34" stroke="#333" strokeWidth="1.8" />
+                <path d="M14 6V12M26 6V12" stroke="#333" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              {configLoaded ? (
+                <div>
+                  <p style={{ color: '#AAAAAA', fontSize: '15px', marginBottom: '4px' }}>No calendar connected yet</p>
+                  <p style={{ color: '#555', fontSize: '13px' }}>Add your Calendly URL in Admin → VSL Landing Page → Lead form</p>
+                </div>
+              ) : (
+                <p style={{ color: '#555', fontSize: '14px' }}>Loading your calendar…</p>
+              )}
             </div>
-            <a
-              href={calendlyUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '13px 28px',
-                borderRadius: '10px',
-                background: '#D4A853',
-                color: '#000',
-                fontSize: '15px',
-                fontWeight: 700,
-                textDecoration: 'none',
-                marginTop: '8px',
-                transition: 'opacity 0.15s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.9'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
-            >
-              Book a Call →
-            </a>
-          </div>
+          )}
         </section>
 
         {/* ── Section 3: What to expect ────────────────────────────────────────── */}
